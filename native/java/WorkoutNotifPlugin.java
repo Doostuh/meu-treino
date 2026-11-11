@@ -59,9 +59,18 @@ public class WorkoutNotifPlugin extends Plugin {
         st.finished = d.optBoolean("finished", false);
         st.sound = d.optBoolean("sound", true);
         st.restEnd = (long) d.optDouble("restEnd", 0.0);
+        Sounds.useAlarm = d.optBoolean("alarm", false);
         Intent i = new Intent(getContext(), WorkoutService.class);
         i.setAction(WorkoutService.ACTION_REFRESH);
         ContextCompat.startForegroundService(getContext(), i);
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void playSound(PluginCall call) {
+        JSObject d = call.getData();
+        Sounds.useAlarm = d.optBoolean("alarm", Sounds.useAlarm);
+        Sounds.play(getContext(), d.optString("name", "chime"));
         call.resolve();
     }
 

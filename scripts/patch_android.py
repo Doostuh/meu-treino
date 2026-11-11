@@ -6,7 +6,7 @@ pkg_dir = os.path.join(APP, "java", "br", "adriano", "meutreino")
 os.makedirs(pkg_dir, exist_ok=True)
 for f in os.listdir(os.path.join(ROOT, "native", "java")):
     shutil.copy(os.path.join(ROOT, "native", "java", f), os.path.join(pkg_dir, f))
-for sub in ("layout", "drawable"):
+for sub in ("layout", "drawable", "raw"):
     dst = os.path.join(APP, "res", sub); os.makedirs(dst, exist_ok=True)
     for f in os.listdir(os.path.join(ROOT, "native", "res", sub)):
         shutil.copy(os.path.join(ROOT, "native", "res", sub, f), os.path.join(dst, f))

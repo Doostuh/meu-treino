@@ -8,9 +8,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -60,6 +57,7 @@ public class WorkoutService extends Service {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable restDone = this::onRestDone;
+    private final Runnable tick = () -> { if (STATE.sound) Sounds.play(getApplicationContext(), "tick"); buzz(new long[]{0, 30}); };
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
@@ -117,25 +115,28 @@ public class WorkoutService extends Service {
     @Override
     public void onDestroy() {
         handler.removeCallbacks(restDone);
+        handler.removeCallbacks(tick);
         super.onDestroy();
     }
 
     private void scheduleRest() {
         handler.removeCallbacks(restDone);
+        handler.removeCallbacks(tick);
         long left = STATE.restEnd - System.currentTimeMillis();
-        if (STATE.restEnd > 0 && left > 0) handler.postDelayed(restDone, left);
+        if (STATE.restEnd > 0 && left > 0) {
+            handler.postDelayed(restDone, left);
+            // contagem 3, 2, 1 antes do fim
+            for (int k = 3; k >= 1; k--) {
+                long at = left - k * 1000L;
+                if (at > 0) handler.postDelayed(tick, at);
+            }
+        }
     }
 
     private void onRestDone() {
         STATE.restEnd = 0;
         buzz(new long[]{0, 280, 140, 280, 140, 420});
-        if (STATE.sound) {
-            try {
-                Uri u = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-                Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), u);
-                if (r != null) r.play();
-            } catch (Exception ignored) { }
-        }
+        if (STATE.sound) Sounds.play(getApplicationContext(), "chime");
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // Alerta curto e visível (heads-up) avisando o fim do descanso
         NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ALERT)
