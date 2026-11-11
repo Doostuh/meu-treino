@@ -2,5 +2,19 @@
   "appId": "br.adriano.meutreino",
   "appName": "Meu Treino",
   "webDir": "www",
-  "android": { "backgroundColor": "#0d0f12" }
+  "android": {
+    "backgroundColor": "#0d0f12"
+  },
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": [
+      "www.strava.com",
+      "strava.com"
+    ]
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
 }

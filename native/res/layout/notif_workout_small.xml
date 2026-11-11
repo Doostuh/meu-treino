@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:id="@+id/s_ex" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title" android:textStyle="bold" android:maxLines="1" android:ellipsize="end"/>
+        <TextView android:id="@+id/s_val" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Compat.Notification" android:maxLines="1" android:ellipsize="end"/>
+    </LinearLayout>
+    <Chronometer android:id="@+id/s_chrono" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp" android:textStyle="bold" android:textSize="16sp" android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
+    <TextView android:id="@+id/s_done" android:layout_width="44dp" android:layout_height="36dp" android:layout_marginLeft="8dp"
+        android:gravity="center" android:background="@drawable/notif_btn_acc" android:text="✓" android:textColor="#FF06251A" android:textStyle="bold" android:textSize="17sp"/>
+</LinearLayout>
