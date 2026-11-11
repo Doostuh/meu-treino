@@ -1,9 +1,23 @@
 package br.adriano.meutreino;
 
 import android.Manifest;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -72,6 +86,64 @@ public class WorkoutNotifPlugin extends Plugin {
         Sounds.useAlarm = d.optBoolean("alarm", Sounds.useAlarm);
         Sounds.play(getContext(), d.optString("name", "chime"));
         call.resolve();
+    }
+
+    /**
+     * Salva um arquivo de backup em Downloads/MeuTreino pelo MediaStore (Android 10+),
+     * que não precisa de permissão e mantém o arquivo mesmo se o app for desinstalado.
+     * Mantém apenas os últimos "keep" arquivos automáticos (meutreino-auto-*).
+     */
+    @PluginMethod
+    public void saveBackup(PluginCall call) {
+        String name = call.getString("name", "meutreino-backup.json");
+        String data = call.getString("data", "");
+        int keep = call.getData().optInt("keep", 7);
+        try {
+            byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentResolver cr = getContext().getContentResolver();
+                Uri col = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                String rel = Environment.DIRECTORY_DOWNLOADS + "/MeuTreino/";
+                Uri target = null;
+                List<Uri> autos = new ArrayList<>();
+                try (Cursor c = cr.query(col, new String[]{MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME},
+                        MediaStore.MediaColumns.RELATIVE_PATH + "=?", new String[]{rel}, MediaStore.MediaColumns.DISPLAY_NAME + " ASC")) {
+                    if (c != null) while (c.moveToNext()) {
+                        Uri u = ContentUris.withAppendedId(col, c.getLong(0));
+                        String n = c.getString(1);
+                        if (name.equals(n)) target = u;
+                        else if (n != null && n.startsWith("meutreino-auto-")) autos.add(u);
+                    }
+                }
+                if (target == null) {
+                    ContentValues v = new ContentValues();
+                    v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                    v.put(MediaStore.MediaColumns.MIME_TYPE, "application/json");
+                    v.put(MediaStore.MediaColumns.RELATIVE_PATH, rel);
+                    target = cr.insert(col, v);
+                }
+                if (target == null) throw new Exception("não foi possível criar o arquivo");
+                try (OutputStream os = cr.openOutputStream(target, "wt")) {
+                    if (os == null) throw new Exception("não foi possível abrir o arquivo");
+                    os.write(bytes);
+                }
+                if (name.startsWith("meutreino-auto-")) {
+                    int extra = autos.size() + 1 - keep;
+                    for (int k = 0; k < extra && k < autos.size(); k++) {
+                        try { cr.delete(autos.get(k), null, null); } catch (Exception ignored) { }
+                    }
+                }
+            } else {
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "MeuTreino");
+                if (!dir.exists()) dir.mkdirs();
+                try (FileOutputStream fo = new FileOutputStream(new File(dir, name))) { fo.write(bytes); }
+            }
+            JSObject r = new JSObject();
+            r.put("path", "Downloads/MeuTreino/" + name);
+            call.resolve(r);
+        } catch (Exception e) {
+            call.reject(e.getMessage() == null ? "erro ao salvar" : e.getMessage());
+        }
     }
 
     @PluginMethod

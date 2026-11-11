@@ -701,7 +701,9 @@ function cycleSheet(){ const pl=planNextCycle(), s=load();
 }
 
 /* ---------- backup automático ---------- */
-async function autoBackup(force){ const FS=CAP&&CAP.Plugins&&CAP.Plugins.Filesystem; if(!FS) return; const s=load(), t=todayISO(); if(!force&&s.lastAutoBackup===t) return;
+async function autoBackup(force){ const s0=load(), t0=todayISO(); if(NW&&NW.saveBackup){ if(!force&&s0.lastAutoBackup===t0) return;
+  try{ await NW.saveBackup({name:`meutreino-auto-${t0}.json`,data:JSON.stringify(s0),keep:7}); s0.lastAutoBackup=t0; s0.autoBackupErr=null; save(); }catch(e){ s0.autoBackupErr=String(e&&e.message||e); save(); } return; }
+ const FS=CAP&&CAP.Plugins&&CAP.Plugins.Filesystem; if(!FS) return; const s=load(), t=todayISO(); if(!force&&s.lastAutoBackup===t) return;
  try{ try{ await FS.requestPermissions(); }catch(e){}
   try{ await FS.mkdir({path:"MeuTreino",directory:"DOCUMENTS",recursive:true}); }catch(e){}
   await FS.writeFile({path:`MeuTreino/meutreino-auto-${t}.json`,data:JSON.stringify(s),directory:"DOCUMENTS",encoding:"utf8"});
@@ -711,7 +713,7 @@ async function autoBackup(force){ const FS=CAP&&CAP.Plugins&&CAP.Plugins.Filesys
 
 /* ---------- fontes de corrida ---------- */
 const RUN_SRC={plan:"plano fixo",manual:"registro manual",intervals:"intervals.icu",strava:"Strava"};
-function realRuns(){ const s=load(); return !!s.runSource && s.runSource!=="plan"; }
+function realRuns(){ const s=load(), r=s.runSource; if(!r||r==="plan") return false; if(r==="strava") return stravaOn(); if(r==="intervals") return !!(s.icu&&s.icu.ok); return true; }
 function mergeRuns(list,src){ const s=load(), by={}; (s.runs||[]).forEach(x=>by[x.id]=x); list.forEach(x=>{ x.src=src; by[x.id]=x; }); s.runs=Object.values(by).sort((a,b)=>a.date.localeCompare(b.date)); save(); }
 function icuAuth(){ return "Basic "+btoa("API_KEY:"+(load().icu.key||"").trim()); }
 async function icuFetch(path){ const r=await fetch("https://intervals.icu/api/v1"+path,{headers:{Authorization:icuAuth(),Accept:"application/json"}}); if(r.status===401||r.status===403) throw new Error("chave de API inválida"); if(!r.ok) throw new Error("erro "+r.status); return r.json(); }
@@ -842,6 +844,7 @@ function vHome(){
  ${(()=>{ const r=nextWorkoutRecoveryWarn(ph,next); return r&&!warn?`<div class="tip">${ic("warn",18)}<div>Músculos principais do treino ${next} ainda em recuperação: ${r}. Se puder, faça outro treino da fila hoje ou reduza uma série.</div></div>`:""; })()}
  ${wk>12?`<button class="banner" id="cyc"><div class="bi">${ic("trophy",20)}</div><div><b>Ciclo de 12 semanas concluído</b><span>Toque para gerar o próximo ciclo a partir dos seus dados</span></div></button>`:""}
  ${(()=>{ const ws=new Date(monday(new Date()).getTime()-7*864e5), k=localISO(ws), d=new Date().getDay(); const had=s.sessions.some(x=>{ const t=new Date(x.date); return t>=ws&&t<monday(new Date()); }); return had&&s.seenReport!==k&&(d===0||d===1||d===2)?`<button class="banner" id="rep"><div class="bi">${ic("chart",20)}</div><div><b>Seu relatório da semana está pronto</b><span>Volume, músculos, lombar e o que ajustar</span></div></button>`:""; })()}
+ ${s.sessions.length===0?`<label class="banner" style="cursor:pointer"><div class="bi">${ic("undo",20)}</div><div><b>Já usava o app? Restaure seu backup</b><span>Escolha o arquivo meutreino-backup ou meutreino-auto (fica em Downloads/MeuTreino)</span></div><input type="file" accept=".json,application/json" id="impH" class="hidden"></label>`:""}
  <div class="sec"><div class="stats">
   <div class="stat"><b>${weekSess.length}</b><span>Na semana</span></div>
   <div class="stat"><b>${streakWeeks()}</b><span>Sequência</span></div>
@@ -855,7 +858,7 @@ function vHome(){
   <p class="small mut" style="margin:12px 0 0">Faltou um dia? A fila continua de onde parou. ${esc(P.desc)}</p>
  </div></div>
  </div>`;
- bindRecovery();
+ bindRecovery(); const ih=document.getElementById("impH"); if(ih) ih.onchange=e=>importBackupFile(e.target.files[0]);
  document.getElementById("lvl").onclick=levelSheet; document.getElementById("expr").onclick=()=>expressSheet(ph,next);
  const cyb=document.getElementById("cyc"); if(cyb) cyb.onclick=cycleSheet; const rpb=document.getElementById("rep"); if(rpb) rpb.onclick=()=>{ reportSheet(1); };
  if(s.runSource==="manual") app.querySelectorAll(".week .day").forEach((el,i)=>{ const iso=days[i].iso; if(parseISO(iso)<=new Date()) el.onclick=()=>runSheet(iso); });
@@ -1413,7 +1416,7 @@ function vCfg(){
   <label>Barra do Smith (kg)<input class="field" id="smithKg" type="number" inputmode="decimal" step="0.5" value="${s.smithKg}"></label></div>
   <p class="small mut" style="margin:10px 0 0">Usado na calculadora de anilhas. Muitos Smith têm contrapeso; pergunte na academia ou deixe 15 kg.</p></div></div>
  <div class="sec"><div class="sech"><h3>Substituições fixas</h3></div><div class="panel" id="swl"></div></div>
- <div class="sec"><div class="sech"><h3>Backup</h3></div><div class="panel"><p class="small mut" style="margin:0 0 12px">${CAP?`Backup automático diário na pasta <b style="color:var(--txt)">Documentos/MeuTreino</b> do celular (guarda os últimos 7 dias). ${s.lastAutoBackup?"Último: "+fmtDay(s.lastAutoBackup)+".":"Ainda não foi feito."}${s.autoBackupErr?` <span style="color:var(--warn)">Erro no último: ${esc(s.autoBackupErr)}</span>`:""} Para restaurar, use "Importar backup" e escolha um desses arquivos.`:"Os dados ficam só neste aparelho. Exporte de vez em quando e guarde no Drive ou no WhatsApp."}</p>
+ <div class="sec"><div class="sech"><h3>Backup</h3></div><div class="panel"><p class="small mut" style="margin:0 0 12px">${CAP?`Backup automático diário na pasta <b style="color:var(--txt)">Downloads/MeuTreino</b> do celular (guarda os últimos 7 dias). ${s.lastAutoBackup?"Último: "+fmtDay(s.lastAutoBackup)+".":"Ainda não foi feito."}${s.autoBackupErr?` <span style="color:var(--warn)">Erro no último: ${esc(s.autoBackupErr)}</span>`:""} Para restaurar, use "Importar backup" e escolha um desses arquivos.`:"Os dados ficam só neste aparelho. Exporte de vez em quando e guarde no Drive ou no WhatsApp."}</p>
   ${CAP?`<button class="btn2" id="abk">Fazer backup automático agora</button><div class="gap"></div>`:""}
   <button class="btn2" id="exp">Exportar backup</button><div class="gap"></div><button class="btn2" id="csv">Exportar planilha (CSV)</button><div class="gap"></div><label class="btn2" style="cursor:pointer">Importar backup<input type="file" accept=".json,application/json" id="imp" class="hidden"></label></div></div>
  <div class="sec"><div class="panel"><button class="btn2 danger" id="rst">Reiniciar as 12 semanas</button><p class="small mut" style="margin:8px 0 0;text-align:center">Volta para a semana 1 a partir de hoje. O histórico é mantido.</p></div></div>
@@ -1427,12 +1430,14 @@ function vCfg(){
  document.getElementById("rst").onclick=()=>ask("Reiniciar o ciclo?","A semana 1 passa a ser esta semana e a fila volta para o treino A. Seu histórico continua salvo.","Reiniciar",()=>{ s.start=todayISO(); s.phaseOverride=null; s.next="A"; save(); render(); toast("Ciclo reiniciado"); },true);
  document.getElementById("sndtest").onclick=()=>playSound("chime");
  document.getElementById("exp").onclick=exportBackup; document.getElementById("csv").onclick=exportCSV;
- document.getElementById("cyc2").onclick=cycleSheet; const abk=document.getElementById("abk"); if(abk) abk.onclick=async()=>{ await autoBackup(true); vCfg(); toast(load().autoBackupErr?"Não foi possível salvar o backup":"Backup salvo em Documentos/MeuTreino"); };
+ document.getElementById("cyc2").onclick=cycleSheet; const abk=document.getElementById("abk"); if(abk) abk.onclick=async()=>{ await autoBackup(true); vCfg(); toast(load().autoBackupErr?"Não foi possível salvar o backup":"Backup salvo em Downloads/MeuTreino"); };
  runSourcePanel();
  ["barKg","smithKg"].forEach(k=>document.getElementById(k).onchange=e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ s[k]=v; save(); toast("Peso da barra salvo"); } });
- document.getElementById("imp").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!Array.isArray(d.sessions)) throw 0;
-   ask("Importar backup?",`O arquivo tem ${d.sessions.length} treinos. Os dados atuais deste celular serão substituídos.`,"Importar",()=>{ mem=Object.assign(load(),d); if(mem.active&&mem.active.v!==2) mem.active=null; save(); render(); toast("Backup importado"); }); }catch(err){ toast("Esse arquivo não é um backup do Meu Treino"); } }; r.readAsText(f); };
+ document.getElementById("imp").onchange=e=>importBackupFile(e.target.files[0]);
 }
+function importBackupFile(f){ if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!Array.isArray(d.sessions)) throw 0;
+   const cur=load(); const txt=cur.sessions.length?`O arquivo tem ${d.sessions.length} treino${d.sessions.length===1?"":"s"}. Os dados atuais deste celular (${cur.sessions.length} treinos) serão substituídos.`:`O arquivo tem ${d.sessions.length} treino${d.sessions.length===1?"":"s"}${d.sessions.length?`, o último em ${fmtDay(localISO(d.sessions[d.sessions.length-1].date))}`:""}.`;
+   ask("Importar backup?",txt,"Importar",()=>{ mem=Object.assign(load(),d); if(mem.active&&mem.active.v!==2) mem.active=null; mem.autoBackupErr=null; save(); render(); toast("Backup importado"); autoBackup(true); }); }catch(err){ toast("Esse arquivo não é um backup do Meu Treino"); } }; r.readAsText(f); }
 function stravaPanel(){ const s=load(), el=document.getElementById("stv"); if(!el) return; s.strava=s.strava||{}; const st=s.strava;
  if(stravaOn()){ el.innerHTML=`<div class="lrow" style="padding-top:0"><div><b>${esc(st.athlete||"Conta conectada")}</b><div class="small mut">${(s.runs||[]).length} corridas importadas${st.lastSync?" • última sincronização "+new Date(st.lastSync).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}</div></div></div>
   <button class="btn2" id="sv1">Sincronizar agora</button><div class="gap"></div><button class="btn2 danger" id="sv2">Desconectar</button>
@@ -1449,7 +1454,9 @@ async function shareFile(name,data,mime,title){
  if(CAP&&CAP.Plugins&&CAP.Plugins.Filesystem&&CAP.Plugins.Share){ try{ const r=await CAP.Plugins.Filesystem.writeFile({path:name,data,directory:"CACHE",encoding:"utf8"}); await CAP.Plugins.Share.share({title,url:r.uri,dialogTitle:title}); return; }catch(e){ if(String(e&&e.message).match(/cancel/i)) return; toast("Não foi possível compartilhar: "+esc(e&&e.message||e)); return; } }
  try{ const file=new File([data],name,{type:mime}); if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title}); return; } }catch(e){ if(e&&e.name==="AbortError") return; }
  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([data],{type:mime})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); toast("Arquivo salvo em Downloads"); }
-function exportBackup(){ shareFile("meutreino-backup-"+todayISO()+".json",JSON.stringify(load()),"application/json","Backup Meu Treino"); }
+async function exportBackup(){ const name="meutreino-backup-"+todayISO()+".json", data=JSON.stringify(load());
+ if(NW&&NW.saveBackup){ try{ await NW.saveBackup({name,data}); toast("Cópia salva em Downloads/MeuTreino"); }catch(e){} }
+ shareFile(name,data,"application/json","Backup Meu Treino"); }
 function exportCSV(){ const s=load(), q=v=>{ const t=String(v==null?"":v); return /[;"\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t; }, n=v=>v==null?"":String(v).replace(".",",");
  const rows=[["data","treino","fase","minutos","lombar_0a10","exercicio","grupo","serie","kg","reps","rir","volume","recorde"]];
  s.sessions.forEach(x=>{ const c={}; x.sets.forEach(st=>{ c[st.ex]=(c[st.ex]||0)+1; rows.push([localISO(x.date),x.key,x.phase,x.min,x.pain,st.ex,muscleOf(st.ex)||"",c[st.ex],n(st.kg),st.reps,st.rir,n(Math.round(st.kg*st.reps*10)/10),st.pr?"sim":""]); }); });
