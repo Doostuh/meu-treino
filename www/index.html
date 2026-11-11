@@ -235,6 +235,18 @@ nav.tabs .live::after{content:"";position:absolute;top:6px;left:calc(50% + 9px);
 .formgrid label{font-size:12px;font-weight:700;color:var(--mut)}
 .formgrid input{margin-top:5px}
 textarea.field{min-height:110px;resize:vertical;font:inherit}
+/* recovery map */
+.recov{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.recov figure{margin:0;text-align:center}
+.recov figcaption{font-size:10.5px;font-weight:800;color:var(--dim);letter-spacing:.08em;margin-top:2px}
+.recov svg{width:100%;max-width:170px;height:auto;display:block;margin:0 auto}
+.recov svg .m{cursor:pointer;transition:opacity .15s}
+.recov svg .m:active{opacity:.7}
+.rleg{display:flex;justify-content:center;gap:12px;font-size:11px;color:var(--mut);margin-top:8px;flex-wrap:wrap}
+.rleg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.rlist{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.rlist div{display:flex;justify-content:space-between;background:var(--s2);border-radius:9px;padding:7px 10px;font-size:12.5px}
+.rlist b{font-variant-numeric:tabular-nums}
 /* history / progress */
 .month{font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 8px}
 .hcard{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--s1);border-radius:14px;padding:12px;margin-top:8px}
@@ -317,10 +329,73 @@ function round25(v){ return Math.max(0,Math.round(v/2.5)*2.5); }
 function muscleOf(name){ return MUSCLE[GROUP_OF[name]]||null; }
 const CAP=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?window.Capacitor:null;
 
+/* ---------- recuperação muscular ---------- */
+const RM={peito:"Peito",ombros:"Ombros",biceps:"Bíceps",triceps:"Tríceps",costas:"Costas",trapezio:"Trapézio",abdomen:"Abdômen",lombar:"Lombar",gluteo:"Glúteos",quadriceps:"Quadríceps",posterior:"Posterior de coxa",panturrilha:"Panturrilha"};
+const RM_CAP={peito:12,ombros:12,biceps:8,triceps:8,costas:14,trapezio:8,abdomen:10,lombar:8,gluteo:12,quadriceps:14,posterior:12,panturrilha:10};
+const RM_TAU={peito:26,ombros:22,biceps:20,triceps:20,costas:28,trapezio:20,abdomen:18,lombar:30,gluteo:28,quadriceps:32,posterior:32,panturrilha:22};
+const LOAD={"Peito inclinado":{peito:1,triceps:.5,ombros:.5},"Peito reto":{peito:1,triceps:.5,ombros:.3},"Peito isolado":{peito:1,ombros:.2},
+ "Puxada vertical":{costas:1,biceps:.5},"Remada":{costas:1,biceps:.4,ombros:.3,lombar:.15},"Pullover":{costas:.8},
+ "Desenvolvimento":{ombros:1,triceps:.5},"Elevação lateral":{ombros:1},"Elevação frontal":{ombros:1},"Ombro posterior":{ombros:.9,costas:.2},"Trapézio":{trapezio:1},
+ "Bíceps":{biceps:1},"Tríceps":{triceps:1},
+ "Agachamento":{quadriceps:1,gluteo:.6,lombar:.3},"Perna unilateral":{quadriceps:1,gluteo:.7},"Quadríceps isolado":{quadriceps:1},
+ "Dobradiça de quadril":{posterior:1,gluteo:.7,lombar:.6},"Flexores de joelho":{posterior:1},"Glúteo":{gluteo:1,posterior:.3},"Abdutores":{gluteo:.6},
+ "Panturrilha":{panturrilha:1},"Lombar":{lombar:1,gluteo:.3},"Core antiextensão":{abdomen:1},"Core antirrotação":{abdomen:.8},"Core lateral e carregamentos":{abdomen:.7,lombar:.3,trapezio:.2}};
+const RUN_LOAD={2:{quadriceps:4,posterior:3,panturrilha:4,gluteo:2.5},6:{quadriceps:4,posterior:3,panturrilha:5,gluteo:3}};
+function fatigueMap(at){
+ const now=at||Date.now(), F={}; Object.keys(RM).forEach(k=>F[k]=0);
+ const add=(m,amt,t)=>{ const h=(now-t)/36e5; if(h<0||h>24*7) return; F[m]+=amt*Math.exp(-h/RM_TAU[m]); };
+ const s=load();
+ s.sessions.forEach(x=>{ const t=new Date(x.date).getTime(); x.sets.forEach(st=>{ const L=LOAD[GROUP_OF[st.ex]]; if(!L) return; const rirF=st.rir==null?1:st.rir>=4?.7:st.rir>=3?.85:1; Object.entries(L).forEach(([m,w])=>add(m,w*rirF,t)); }); });
+ if(s.active){ Object.values(s.active.sets).forEach(st=>{ if(st.w) return; const L=LOAD[GROUP_OF[st.ex]]; if(L) Object.entries(L).forEach(([m,w])=>add(m,w,st.t)); }); }
+ if(s.countRuns){ for(let d=0;d<7;d++){ const day=new Date(); day.setHours(7,30,0,0); day.setDate(day.getDate()-d); const L=RUN_LOAD[day.getDay()]; if(L&&day.getTime()<=now&&!(s.skipRuns||[]).includes(localISO(day))) Object.entries(L).forEach(([m,v])=>add(m,v,day.getTime())); } }
+ return F;
+}
+function recoveryMap(){ const F=fatigueMap(), R={}; Object.keys(RM).forEach(m=>{ const f=F[m], cap=RM_CAP[m]; const pct=Math.max(0,Math.min(100,Math.round(100-f/cap*100))); const h=f>0.1*cap?Math.ceil(RM_TAU[m]*Math.log(f/(0.1*cap))):0; R[m]={pct,h}; }); return R; }
+function recColor(p){ return p>=90?"#34d399":p>=70?"#a3d95b":p>=50?"#fbbf24":p>=30?"#fb8a3c":"#ef4444"; }
+function bodySVG(side,R){
+ const base="#1f232b", c=m=>recColor(R[m].pct), M=(m,d)=>`<path class="m" data-mu="${m}" d="${d}" fill="${c(m)}" fill-opacity=".9" stroke="#0b0c0f" stroke-width="1.2"/>`;
+ const sil=`<g fill="${base}"><circle cx="100" cy="28" r="17"/><rect x="91" y="42" width="18" height="12" rx="4"/>
+  <path d="M60 58 Q100 48 140 58 L150 70 L146 170 Q100 182 54 170 L50 70 Z"/>
+  <path d="M50 66 Q38 70 36 92 L30 150 Q28 172 34 196 L44 196 Q46 172 48 152 L56 104 Z"/><path d="M150 66 Q162 70 164 92 L170 150 Q172 172 166 196 L156 196 Q154 172 152 152 L144 104 Z"/>
+  <path d="M56 168 Q100 182 144 168 L142 200 L136 300 L130 372 L112 372 L104 238 L96 238 L88 372 L70 372 L64 300 L58 200 Z"/></g>`;
+ if(side==="front") return `<svg viewBox="0 0 200 384" role="img" aria-label="Músculos de frente">${sil}
+  ${M("ombros","M52 66 Q60 56 76 60 L72 82 Q58 88 50 84 Z")}${M("ombros","M148 66 Q140 56 124 60 L128 82 Q142 88 150 84 Z")}
+  ${M("peito","M78 62 Q98 60 98 66 L98 98 Q84 104 72 96 L72 80 Z")}${M("peito","M122 62 Q102 60 102 66 L102 98 Q116 104 128 96 L128 80 Z")}
+  ${M("biceps","M50 90 Q58 88 60 96 L56 132 Q48 136 44 128 L46 100 Z")}${M("biceps","M150 90 Q142 88 140 96 L144 132 Q152 136 156 128 L154 100 Z")}
+  ${M("abdomen","M88 104 L112 104 Q116 110 114 120 L112 164 Q100 170 88 164 L86 120 Q84 110 88 104 Z")}
+  ${M("abdomen","M74 104 L84 108 L84 160 L72 154 Q70 130 74 104 Z")}${M("abdomen","M126 104 L116 108 L116 160 L128 154 Q130 130 126 104 Z")}
+  ${M("quadriceps","M62 186 Q78 178 96 190 L94 244 Q90 268 82 276 Q70 272 66 252 Q60 220 62 186 Z")}${M("quadriceps","M138 186 Q122 178 104 190 L106 244 Q110 268 118 276 Q130 272 134 252 Q140 220 138 186 Z")}
+  ${M("panturrilha","M68 290 Q76 284 86 292 L86 330 Q80 350 74 350 Q68 330 68 290 Z")}${M("panturrilha","M132 290 Q124 284 114 292 L114 330 Q120 350 126 350 Q132 330 132 290 Z")}</svg>`;
+ return `<svg viewBox="0 0 200 384" role="img" aria-label="Músculos de costas">${sil}
+  ${M("trapezio","M82 48 Q100 42 118 48 L128 60 L112 72 L100 96 L88 72 L72 60 Z")}
+  ${M("ombros","M52 66 Q60 56 72 60 L74 80 Q58 88 50 84 Z")}${M("ombros","M148 66 Q140 56 128 60 L126 80 Q142 88 150 84 Z")}
+  ${M("costas","M74 72 L88 76 L98 104 L98 136 Q84 138 76 128 Q68 104 74 72 Z")}${M("costas","M126 72 L112 76 L102 104 L102 136 Q116 138 124 128 Q132 104 126 72 Z")}
+  ${M("triceps","M50 90 Q58 88 60 96 L56 132 Q48 136 44 128 L46 100 Z")}${M("triceps","M150 90 Q142 88 140 96 L144 132 Q152 136 156 128 L154 100 Z")}
+  ${M("lombar","M84 138 L116 138 L118 166 Q100 172 82 166 Z")}
+  ${M("gluteo","M60 172 Q80 166 98 176 L98 204 Q80 214 64 204 Q58 190 60 172 Z")}${M("gluteo","M140 172 Q120 166 102 176 L102 204 Q120 214 136 204 Q142 190 140 172 Z")}
+  ${M("posterior","M64 210 Q80 216 96 210 L94 250 Q88 272 80 276 Q70 270 66 250 Z")}${M("posterior","M136 210 Q120 216 104 210 L106 250 Q112 272 120 276 Q130 270 134 250 Z")}
+  ${M("panturrilha","M66 286 Q76 280 88 288 L86 330 Q80 352 74 352 Q66 330 66 286 Z")}${M("panturrilha","M134 286 Q124 280 112 288 L114 330 Q120 352 126 352 Q134 330 134 286 Z")}</svg>`;
+}
+function recoveryCard(compact){
+ const R=recoveryMap();
+ const order=Object.keys(RM).sort((a,b)=>R[a].pct-R[b].pct);
+ return `<div class="panel" id="recovp"><div class="phase-row"><div><div class="eyebrow">Recuperação muscular</div><div style="font-weight:800;margin-top:3px">${(()=>{ const low=order.filter(m=>R[m].pct<60); return low.length?"Cansados: "+low.slice(0,3).map(m=>RM[m]).join(", "):"Tudo recuperado para treinar"; })()}</div></div></div>
+  <div class="recov"><figure>${bodySVG("front",R)}<figcaption>FRENTE</figcaption></figure><figure>${bodySVG("back",R)}<figcaption>COSTAS</figcaption></figure></div>
+  <div class="rleg"><span><i style="background:#34d399"></i>Pronto</span><span><i style="background:#fbbf24"></i>Parcial</span><span><i style="background:#ef4444"></i>Fatigado</span></div>
+  ${compact?"":`<div class="rlist">${order.map(m=>`<div><span>${RM[m]}</span><b style="color:${recColor(R[m].pct)}">${R[m].pct}%</b></div>`).join("")}</div>`}
+  <p class="small mut" style="margin:10px 0 0">Toque em um músculo para ver detalhes. Estimativa feita a partir das séries registradas, do RIR e ${load().countRuns?"das corridas de terça e sábado":"sem contar as corridas"}.</p></div>`;
+}
+function bindRecovery(){ const R=recoveryMap(); document.querySelectorAll("[data-mu]").forEach(el=>el.onclick=()=>{ const m=el.dataset.mu, r=R[m];
+ const when=r.h<=0?"Já está pronto para treino pesado.":`Deve chegar a 90% em cerca de ${r.h<24?r.h+" h":Math.round(r.h/24*10)/10+" dias"}.`;
+ openSheet(`<div class="eyebrow">Recuperação</div><h2 style="margin-top:4px">${RM[m]}</h2><div style="font-family:var(--disp);font-weight:800;font-size:56px;color:${recColor(r.pct)};line-height:1;margin-top:10px">${r.pct}%</div><p style="margin:8px 0 0">${when}</p>
+  <p class="small mut">Com menos de 60%, prefira trocar a ordem da fila ou reduzir uma série nos exercícios desse músculo. A estimativa considera volume, RIR e o tempo desde o último estímulo.</p><button class="cta" onclick="closeSheet()">Fechar</button>`); }); }
+function nextWorkoutRecoveryWarn(ph,k){ const R=recoveryMap(), W=workout(ph,k), ms=new Set(); W.main.forEach(e=>{ const L=LOAD[GROUP_OF[e.n]]; if(L) Object.entries(L).forEach(([m,w])=>{ if(w>=1) ms.add(m); }); });
+ const low=[...ms].filter(m=>R[m].pct<60); return low.length?low.map(m=>`${RM[m]} ${R[m].pct}%`).join(", "):null; }
+
 /* ---------- storage ---------- */
 let mem=null;
 function load(){ if(mem) return mem; let d=null; try{ d=JSON.parse(localStorage.getItem(LS)); }catch(e){}
- mem=Object.assign({start:todayISO(),next:"A",sessions:[],active:null,phaseOverride:null,restSound:true,wake:true,swaps:{},warmSets:true,askRir:true,notes:{},body:[],barKg:20,smithKg:15},d||{});
+ mem=Object.assign({start:todayISO(),next:"A",sessions:[],active:null,phaseOverride:null,restSound:true,wake:true,swaps:{},warmSets:true,askRir:true,notes:{},body:[],barKg:20,smithKg:15,countRuns:true,skipRuns:[]},d||{});
  if(!mem.notes) mem.notes={}; if(!mem.body) mem.body=[];
  if(mem.active && mem.active.v!==2) mem.active=null; if(!mem.swaps) mem.swaps={}; return mem; }
 function save(){ try{ localStorage.setItem(LS,JSON.stringify(mem)); }catch(e){} }
@@ -392,7 +467,7 @@ function vHome(){
  const doneKeys=new Set(weekSess.map(x=>x.key));
  app.innerHTML=`<div class="wrap">
  <div class="top"><div class="hello"><div><div class="eyebrow">${greet}, Adriano</div><h1>Hoje</h1></div><div class="avatar">AV</div></div></div>
- <div class="week">${days.map(x=>`<div class="day ${x.iso===today?"today":""} ${x.done?"done":""}"><div class="d">${DOW[x.d.getDay()]}</div><div class="n">${x.d.getDate()}</div><div class="m ${!x.done&&RUN[x.d.getDay()]?"run":""}">${x.done?x.done.join(""):RUN[x.d.getDay()]?(x.d.getDay()===2?"TIRO":"LONG"):""}</div></div>`).join("")}</div>
+ <div class="week">${days.map(x=>`<div class="day ${x.iso===today?"today":""} ${x.done?"done":""}"><div class="d">${DOW[x.d.getDay()]}</div><div class="n">${x.d.getDate()}</div><div class="m ${!x.done&&RUN[x.d.getDay()]?"run":""}" ${RUN[x.d.getDay()]&&x.d<=new Date()?`data-run="${x.iso}"`:""} style="${(load().skipRuns||[]).includes(x.iso)?"text-decoration:line-through;opacity:.5":""}">${x.done?x.done.join(""):RUN[x.d.getDay()]?(x.d.getDay()===2?"TIRO":"LONG"):""}</div></div>`).join("")}</div>
  <div class="hero">
   <div class="eyebrow" style="color:#ffb59c">Próximo da fila • Fase ${ph}</div>
   <div style="display:flex;align-items:flex-end;gap:14px;margin-top:8px"><div class="big disp">${next}</div><div class="ttl">${esc(W.sub.replace(/ • /g," · "))}</div></div>
@@ -401,12 +476,14 @@ function vHome(){
   <button class="alt" id="pick">Trocar o treino de hoje</button>
  </div>
  ${warn?`<div class="tip">${ic("warn",18)}<div>${warn}</div></div>`:""}
+ ${(()=>{ const r=nextWorkoutRecoveryWarn(ph,next); return r&&!warn?`<div class="tip">${ic("warn",18)}<div>Músculos principais do treino ${next} ainda em recuperação: ${r}. Se puder, faça outro treino da fila hoje ou reduza uma série.</div></div>`:""; })()}
  ${wk>12?`<div class="tip ok">${ic("trophy",18)}<div>Você completou as 12 semanas. Continue na Fase 3 ou reinicie o ciclo em Ajustes.</div></div>`:""}
  <div class="sec"><div class="stats">
   <div class="stat"><b>${weekSess.length}</b><span>Na semana</span></div>
   <div class="stat"><b>${streakWeeks()}</b><span>Sequência</span></div>
   <div class="stat"><b>${(weekVol/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})}<small style="font-size:16px">t</small></b><span>Volume sem.</span></div>
  </div></div>
+ <div class="sec">${recoveryCard(true)}</div>
  <div class="sec"><div class="panel">
   <div class="phase-row"><div><div class="eyebrow">${P.name} • ${esc(P.theme)}</div><div style="font-weight:800;margin-top:3px">Semana ${Math.min(wk,12)} de 12</div></div><span class="chip acc">${monthCnt} no mês</span></div>
   <div class="prog"><i style="width:${Math.min(100,wk/12*100)}%"></i></div>
@@ -414,6 +491,8 @@ function vHome(){
   <p class="small mut" style="margin:12px 0 0">Faltou um dia? A fila continua de onde parou. ${esc(P.desc)}</p>
  </div></div>
  </div>`;
+ bindRecovery();
+ app.querySelectorAll("[data-run]").forEach(el=>el.parentElement.onclick=()=>{ const iso=el.dataset.run, sk=s.skipRuns||(s.skipRuns=[]), i=sk.indexOf(iso); i<0?sk.push(iso):sk.splice(i,1); save(); vHome(); toast(i<0?"Corrida marcada como não feita":"Corrida marcada como feita"); });
  document.getElementById("go").onclick=()=>startWorkout(next);
  document.getElementById("pick").onclick=()=>openSheet(`<h2>Treino de hoje</h2><p class="mut small" style="margin:6px 0 4px">Fase ${ph}. A fila segue a partir do treino que você fizer.</p>${KEYS.map(k=>`<button class="opt ${k===next?"cur":""}" data-k="${k}"><div class="hcard k" style="width:46px;height:46px;padding:0;margin:0;background:var(--s3)"><span class="disp" style="font-weight:800;font-size:24px;color:var(--acc)">${k}</span></div><div><b>${esc(workout(ph,k).sub)}</b><div class="small mut">${workout(ph,k).main.length+workout(ph,k).core.length} exercícios</div></div></button>`).join("")}`)
   ||sheet.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ s.next=b.dataset.k; save(); closeSheet(); render(); });
@@ -695,6 +774,7 @@ function vProg(){
  const totalPR=ss.reduce((a,x)=>a+x.sets.filter(s=>s.pr).length,0), mins=ss.reduce((a,x)=>a+x.min,0);
  app.innerHTML=`<div class="wrap"><div class="top"><div class="eyebrow">Progresso</div><h1>Evolução</h1></div>
   <div class="stats"><div class="stat"><b>${ss.length}</b><span>Treinos</span></div><div class="stat"><b>${ss.length?Math.round(mins/ss.length):0}</b><span>Min/treino</span></div><div class="stat"><b>${totalPR}</b><span>Recordes</span></div></div>
+  <div class="sec">${recoveryCard(false)}</div>
   <div class="sec"><div class="sech"><h3>Por exercício</h3></div><div class="panel">
    ${names.length?`<button class="search" id="pickex" style="text-align:left;display:flex;justify-content:space-between;align-items:center"><b style="font-weight:700">${esc(progSel)}</b>${ic("dots",18)}</button>
    <div class="records" id="recs"></div><canvas id="c1" style="margin-top:14px"></canvas><div class="small mut" id="c1l" style="margin-top:6px"></div>`:`<div class="empty">${ic("chart",40,1.5)}<div class="small">Registre séries com carga para ver a evolução de cada exercício.</div></div>`}
@@ -712,6 +792,7 @@ function vProg(){
   lineChart(document.getElementById("c1"),pts.map(p=>{ const d=parseISO(localISO(p.d)); return d.getDate()+"/"+(d.getMonth()+1); }),[{v:pts.map(p=>p.top),c:"#ff5a36"},{v:pts.map(p=>Math.round(p.e*10)/10),c:"#7cb4ff"}]);
   const f0=pts[0], l=pts[pts.length-1]; document.getElementById("c1l").innerHTML=`<span style="color:#ff5a36">●</span> maior carga &nbsp; <span style="color:#7cb4ff">●</span> 1RM estimado${pts.length>1?` &nbsp;•&nbsp; <b style="color:${l.top>=f0.top?"var(--ok)":"var(--warn)"}">${l.top-f0.top>=0?"+":""}${fmtKg(l.top-f0.top)} kg</b> desde o início`:""}`;
  }
+ bindRecovery();
  if(wk.length) barChart(document.getElementById("c2"),wk.map(k=>k.slice(8,10)+"/"+k.slice(5,7)),wk.map(k=>Math.round(weeks[k])));
  // muscles
  const ws=new Date(monday(new Date()).getTime()-muscleWeek*7*864e5), we=new Date(ws.getTime()+7*864e5), cnt={};
@@ -752,6 +833,7 @@ function vCfg(){
   <div class="switch"><div><b style="font-weight:600">Som e vibração no descanso</b><div class="small mut">Avisa quando o timer termina</div></div><button class="tg ${s.restSound?"on":""}" data-tg="restSound" aria-label="Som e vibração"></button></div>
   <div class="switch"><div><b style="font-weight:600">Séries de aquecimento</b><div class="small mut">50% e 75% antes dos compostos pesados</div></div><button class="tg ${s.warmSets?"on":""}" data-tg="warmSets" aria-label="Séries de aquecimento"></button></div>
   <div class="switch"><div><b style="font-weight:600">Perguntar RIR</b><div class="small mut">Repetições na reserva após cada série</div></div><button class="tg ${s.askRir?"on":""}" data-tg="askRir" aria-label="Perguntar RIR"></button></div>
+  <div class="switch"><div><b style="font-weight:600">Contar corridas na recuperação</b><div class="small mut">Considera tiro na terça e longão no sábado</div></div><button class="tg ${s.countRuns?"on":""}" data-tg="countRuns" aria-label="Contar corridas"></button></div>
   <div class="switch"><div><b style="font-weight:600">Manter tela ligada</b><div class="small mut">Enquanto um treino estiver aberto</div></div><button class="tg ${s.wake?"on":""}" data-tg="wake" aria-label="Manter tela ligada"></button></div>
  </div></div>
  <div class="sec"><div class="sech"><h3>Barras da academia</h3></div><div class="panel"><div class="formgrid">
@@ -762,7 +844,7 @@ function vCfg(){
  <div class="sec"><div class="sech"><h3>Backup</h3></div><div class="panel"><p class="small mut" style="margin:0 0 12px">Os dados ficam só neste celular. Exporte de vez em quando e guarde no Drive ou no WhatsApp.</p>
   <button class="btn2" id="exp">Exportar backup</button><div class="gap"></div><button class="btn2" id="csv">Exportar planilha (CSV)</button><div class="gap"></div><label class="btn2" style="cursor:pointer">Importar backup<input type="file" accept=".json,application/json" id="imp" class="hidden"></label></div></div>
  <div class="sec"><div class="panel"><button class="btn2 danger" id="rst">Reiniciar as 12 semanas</button><p class="small mut" style="margin:8px 0 0;text-align:center">Volta para a semana 1 a partir de hoje. O histórico é mantido.</p></div></div>
- <p class="small mut" style="text-align:center;margin:22px 0">Meu Treino 2.1 • Imagens: free-exercise-db (domínio público)</p></div>`;
+ <p class="small mut" style="text-align:center;margin:22px 0">Meu Treino 2.2 • Imagens: free-exercise-db (domínio público)</p></div>`;
  const sw=Object.entries(s.swaps); document.getElementById("swl").innerHTML=sw.length?sw.map(([k,v])=>{ const [p,kk,i]=k.split("|"); const base=[...workout(p,kk).main,...workout(p,kk).core][+i]; return `<div class="lrow"><div style="min-width:0"><b>${esc(v)}</b><div class="small mut">no lugar de ${esc(base.n)} • Fase ${p}, treino ${kk}</div></div><button class="ibtn" data-rm="${esc(k)}" aria-label="Remover">${ic("undo",16)}</button></div>`; }).join(""):`<p class="small mut" style="margin:0">Nenhuma. Ao trocar um exercício, escolha "Sempre neste treino" para fixar a troca.</p>`;
  app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ delete s.swaps[b.dataset.rm]; save(); vCfg(); toast("Substituição removida"); });
  document.getElementById("start").onchange=e=>{ s.start=e.target.value||todayISO(); save(); toast("Data de início salva"); };
