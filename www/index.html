@@ -372,7 +372,7 @@ function fatigueMap(at){
  const s=load();
  s.sessions.forEach(x=>{ const t=new Date(x.date).getTime(); x.sets.forEach(st=>{ const L=LOAD[GROUP_OF[st.ex]]; if(!L) return; const rirF=st.rir==null?1:st.rir>=4?.7:st.rir>=3?.85:1; Object.entries(L).forEach(([m,w])=>add(m,w*rirF,t)); }); });
  if(s.active){ Object.values(s.active.sets).forEach(st=>{ if(st.w) return; const L=LOAD[GROUP_OF[st.ex]]; if(L) Object.entries(L).forEach(([m,w])=>add(m,w,st.t)); }); }
- if(s.strava&&s.strava.access&&(s.runs||[]).length){ s.runs.forEach(r=>{ const t=new Date(r.date).getTime(); let mlt=r.wt===3?1.35:1; if(r.hr) mlt*=Math.min(1.5,Math.max(.6,(r.hr-115)/35)); const k=r.km*mlt; add("quadriceps",k*.45,t); add("posterior",k*.35,t); add("gluteo",k*.3,t); add("panturrilha",k*.55,t); }); }
+ if(realRuns()){ (s.runs||[]).forEach(r=>{ const t=new Date(r.date).getTime(); let mlt=r.wt===3?1.35:1; if(r.hr) mlt*=Math.min(1.5,Math.max(.6,(r.hr-115)/35)); const k=r.km*mlt; add("quadriceps",k*.45,t); add("posterior",k*.35,t); add("gluteo",k*.3,t); add("panturrilha",k*.55,t); }); }
  else if(s.countRuns){ for(let d=0;d<7;d++){ const day=new Date(); day.setHours(7,30,0,0); day.setDate(day.getDate()-d); const L=RUN_LOAD[day.getDay()]; if(L&&day.getTime()<=now&&!(s.skipRuns||[]).includes(localISO(day))) Object.entries(L).forEach(([m,v])=>add(m,v,day.getTime())); } }
  return F;
 }
@@ -409,7 +409,7 @@ function recoveryCard(compact){
   <div class="recov"><figure>${bodySVG("front",R)}<figcaption>FRENTE</figcaption></figure><figure>${bodySVG("back",R)}<figcaption>COSTAS</figcaption></figure></div>
   <div class="rleg"><span><i style="background:#34d399"></i>Pronto</span><span><i style="background:#fbbf24"></i>Parcial</span><span><i style="background:#ef4444"></i>Fatigado</span></div>
   ${compact?"":`<div class="rlist">${order.map(m=>`<div><span>${RM[m]}</span><b style="color:${recColor(R[m].pct)}">${R[m].pct}%</b></div>`).join("")}</div>`}
-  <p class="small mut" style="margin:10px 0 0">Toque em um músculo para ver detalhes. Estimativa feita a partir das séries registradas, do RIR e ${stravaOn()?"das suas corridas do Strava":load().countRuns?"das corridas de terça e sábado":"sem contar as corridas"}.</p></div>`;
+  <p class="small mut" style="margin:10px 0 0">Toque em um músculo para ver detalhes. Estimativa feita a partir das séries registradas, do RIR e ${realRuns()?"das suas corridas registradas ("+RUN_SRC[load().runSource]+")":load().countRuns?"das corridas de terça e sábado":"sem contar as corridas"}.</p></div>`;
 }
 function bindRecovery(){ const R=recoveryMap(); document.querySelectorAll("[data-mu]").forEach(el=>el.onclick=()=>{ const m=el.dataset.mu, r=R[m];
  const when=r.h<=0?"Já está pronto para treino pesado.":`Deve chegar a 90% em cerca de ${r.h<24?r.h+" h":Math.round(r.h/24*10)/10+" dias"}.`;
@@ -550,7 +550,7 @@ const ACH=[
  ["phase3","Fase 3 concluída","16 treinos na Fase 3",s=>s.sessions.filter(x=>x.phase===3).length>=16],
  ["cycle","Ciclo completo","Gerar o segundo ciclo de 12 semanas",s=>(s.cycle||1)>=2],
  ["body4","De olho na balança","4 medições corporais",s=>(s.body||[]).length>=4],
- ["km100","100 km","100 km corridos (Strava)",()=>totalKm()>=100],
+ ["km100","100 km","100 km corridos registrados",()=>totalKm()>=100],
  ["hybrid","Atleta híbrido","Musculação e corrida no mesmo dia",s=>(s.runs||[]).some(r=>s.sessions.some(x=>localISO(x.date)===r.local.slice(0,10)))],
 ];
 function checkAchievements(){ const s=load(); s.ach=s.ach||{}; const fresh=[]; ACH.forEach(([id,t,d,f])=>{ try{ if(!s.ach[id]&&f(s)){ s.ach[id]=todayISO(); fresh.push(t); } }catch(e){} }); if(fresh.length) save(); return fresh; }
@@ -580,7 +580,7 @@ function reportSheet(off){ off=off==null?1:off; const ws=new Date(monday(new Dat
  if(d.prs.length) recos.push(["g",`${d.prs.length} recorde${d.prs.length>1?"s":""}: ${[...new Set(d.prs)].slice(0,4).join(", ")}.`]);
  const body=[...(s.body||[])].sort((a,b)=>a.date.localeCompare(b.date)); const bw=body.filter(x=>x.peso!=null&&parseISO(x.date)<=we), bc=body.filter(x=>x.cintura!=null&&parseISO(x.date)<=we);
  if(bc.length>=2){ const dl=bc[bc.length-1].cintura-bc[0].cintura; recos.push([dl<=0?"g":"w",`Cintura ${dl<=0?"diminuiu":"aumentou"} ${fmtKg(Math.abs(dl))} cm desde a primeira medição.`]); }
- if(s.strava&&s.strava.access&&d.runs) recos.push(["",`${d.runs} corrida${d.runs>1?"s":""} no Strava, ${fmtKg(d.km)} km. O mapa de recuperação já considerou esse desgaste.`]);
+ if(realRuns()&&d.runs) recos.push(["",`${d.runs} corrida${d.runs>1?"s":""} (${RUN_SRC[s.runSource]}), ${fmtKg(d.km)} km. O mapa de recuperação já considerou esse desgaste.`]);
  const dv=pv.vol?Math.round((d.vol-pv.vol)/pv.vol*100):null;
  openSheet(`<div class="eyebrow">Relatório semanal</div><h2 style="margin-top:4px">${ws.getDate()}/${ws.getMonth()+1} a ${we.getDate()}/${we.getMonth()+1}</h2>
   <div class="stats" style="margin-top:14px"><div class="stat" style="background:var(--s2)"><b>${d.ss.length}<small style="font-size:16px">/5</small></b><span>Treinos</span></div>
@@ -623,6 +623,60 @@ async function autoBackup(force){ const FS=CAP&&CAP.Plugins&&CAP.Plugins.Filesys
    for(const f of files.slice(0,Math.max(0,files.length-7))) await FS.deleteFile({path:"MeuTreino/"+f,directory:"DOCUMENTS"}).catch(()=>{}); }catch(e){}
   s.lastAutoBackup=t; s.autoBackupErr=null; save(); }catch(e){ s.autoBackupErr=String(e&&e.message||e); save(); } }
 
+/* ---------- fontes de corrida ---------- */
+const RUN_SRC={plan:"plano fixo",manual:"registro manual",intervals:"intervals.icu",strava:"Strava"};
+function realRuns(){ const s=load(); return !!s.runSource && s.runSource!=="plan"; }
+function mergeRuns(list,src){ const s=load(), by={}; (s.runs||[]).forEach(x=>by[x.id]=x); list.forEach(x=>{ x.src=src; by[x.id]=x; }); s.runs=Object.values(by).sort((a,b)=>a.date.localeCompare(b.date)); save(); }
+function icuAuth(){ return "Basic "+btoa("API_KEY:"+(load().icu.key||"").trim()); }
+async function icuFetch(path){ const r=await fetch("https://intervals.icu/api/v1"+path,{headers:{Authorization:icuAuth(),Accept:"application/json"}}); if(r.status===401||r.status===403) throw new Error("chave de API inválida"); if(!r.ok) throw new Error("erro "+r.status); return r.json(); }
+async function icuConnect(){ const s=load(); s.icu=s.icu||{}; if(!(s.icu.key||"").trim()){ toast("Cole a chave de API do intervals.icu"); return; }
+ try{ const a=await icuFetch("/athlete/0"); s.icu.athlete=a.name||((a.firstname||"")+" "+(a.lastname||"")).trim()||"Conta conectada"; s.icu.ok=true; s.runSource="intervals"; save(); toast("intervals.icu conectado"); await icuSync(true); }
+ catch(e){ s.icu.ok=false; save(); toast("intervals.icu: "+esc(e.message||e)+(CAP?"":". No navegador o acesso pode ser bloqueado; use o app instalado.")); } vCfg(); }
+async function icuSync(manual){ const s=load(); if(!(s.icu&&s.icu.ok)) return; try{
+  const oldest=localISO(new Date(Math.max(Date.now()-90*864e5,(s.icu.lastSync||0)-3*864e5))), newest=localISO(new Date(Date.now()+864e5));
+  const list=await icuFetch(`/athlete/0/activities?oldest=${oldest}&newest=${newest}`); if(!Array.isArray(list)) throw new Error("resposta inesperada");
+  const runs=list.filter(a=>/Run/i.test(a.type||"")&&a.distance).map(a=>{ const hard=(a.icu_intensity||0)>=85||/tiro|interval|fartlek|limiar|threshold|vo2|ritmo/i.test(a.name||""); const loc=a.start_date_local||a.start_date;
+   return {id:"icu"+a.id,date:new Date(a.start_date||loc).toISOString(),local:loc,km:Math.round(a.distance/10)/100,min:Math.round((a.moving_time||a.elapsed_time||0)/60),hr:a.average_heartrate||null,wt:hard?3:0,name:a.name||"Corrida"}; });
+  mergeRuns(runs,"intervals"); s.icu.lastSync=Date.now(); save(); checkAchievements();
+  if(manual) toast(`intervals.icu: ${runs.length} corrida${runs.length===1?"":"s"} sincronizada${runs.length===1?"":"s"}`); if(!(tab==="home"&&s.active)) rerenderKeep();
+ }catch(e){ if(manual) toast("intervals.icu: "+esc(e.message||e)); } }
+function syncRuns(manual){ const s=load(); if(s.runSource==="intervals") return icuSync(manual); if(s.runSource==="strava") return stravaSync(manual); }
+function lastSyncOf(){ const s=load(); return s.runSource==="intervals"?(s.icu&&s.icu.lastSync):s.runSource==="strava"?(s.strava&&s.strava.lastSync):null; }
+function runSheet(dateISO){ const s=load();
+ openSheet(`<h2>Registrar corrida</h2><p class="small mut" style="margin:6px 0 12px">Entra no mapa de recuperação, no calendário e no relatório.</p>
+  <label class="l" for="rd" style="margin-top:0">Data</label><input type="date" class="field" id="rd" value="${dateISO||todayISO()}">
+  <div class="formgrid" style="margin-top:12px"><label>Distância (km)<input class="field" id="rkm" type="number" inputmode="decimal" step="0.1"></label><label>Tempo (min)<input class="field" id="rmin" type="number" inputmode="numeric"></label>
+  <label>FC média (opcional)<input class="field" id="rhr" type="number" inputmode="numeric"></label><label>Tipo<select class="field" id="rtp"><option value="0">Leve / longão</option><option value="3">Tiro / intervalado</option></select></label></div>
+  <div class="gap"></div><button class="cta" id="rsv">Salvar corrida</button>`);
+ document.getElementById("rtp").value=new Date(parseISO(dateISO||todayISO())).getDay()===2?"3":"0";
+ document.getElementById("rsv").onclick=()=>{ const km=parseFloat(String(document.getElementById("rkm").value).replace(",",".")); if(!(km>0)){ toast("Informe a distância"); return; }
+  const d=document.getElementById("rd").value||todayISO(), hr=parseInt(document.getElementById("rhr").value)||null;
+  mergeRuns([{id:"man"+Date.now(),date:new Date(parseISO(d).getTime()+7.5*36e5).toISOString(),local:d+"T07:30:00",km,min:parseInt(document.getElementById("rmin").value)||0,hr,wt:+document.getElementById("rtp").value,name:"Corrida"}],"manual");
+  closeSheet(); const na=checkAchievements(); rerenderKeep(); toast(na.length?"Corrida salva • Conquista: "+esc(na[0]):"Corrida salva"); };
+}
+function runSourcePanel(){ const s=load(), el=document.getElementById("runsrc"); if(!el) return; const src=s.runSource||"plan"; s.icu=s.icu||{};
+ const opts=[["plan","Plano fixo"],["manual","Manual"],["intervals","intervals.icu"],["strava","Strava"]];
+ let body="";
+ if(src==="plan") body=`<p class="small mut" style="margin:0">O app considera um tiro na terça e um longão no sábado. Na tela inicial, toque no dia da corrida para marcar como não feita.</p>`;
+ if(src==="manual") body=`<p class="small mut" style="margin:0 0 12px">Você registra cada corrida (distância, tempo, tipo). Na tela inicial, também dá para tocar no dia da semana para registrar.</p><button class="btn2" id="addrun">${ic("plus",16)} Registrar corrida</button>`;
+ if(src==="intervals") body=s.icu.ok?`<div class="lrow" style="padding-top:0"><div><b>${esc(s.icu.athlete||"Conta conectada")}</b><div class="small mut">${(s.runs||[]).filter(r=>r.src==="intervals").length} corridas importadas${s.icu.lastSync?" • última sincronização "+new Date(s.icu.lastSync).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}</div></div></div>
+   <button class="btn2" id="icsync">Sincronizar agora</button><div class="gap"></div><button class="btn2 danger" id="icoff">Desconectar</button>`
+  :`<p class="small mut" style="margin:0">Gratuito. O intervals.icu recebe as corridas do Garmin Connect automaticamente e o app busca de lá.</p>
+   <div class="reco"><i></i><div>Crie uma conta grátis em <b>intervals.icu</b> e, em Settings, conecte o <b>Garmin Connect</b> (e o Runna, se quiser).</div></div>
+   <div class="reco"><i></i><div>No fim da página de Settings, em <b>Developer Settings</b>, gere a <b>API Key</b> e cole abaixo.</div></div>
+   <label class="l" for="ickey">Chave de API</label><input class="field" id="ickey" type="password" value="${esc(s.icu.key||"")}" autocomplete="off">
+   <div class="gap"></div><button class="cta" id="icon">Conectar</button>`;
+ if(src==="strava") body=`<p class="small mut" style="margin:0 0 12px">Desde junho de 2026, o Strava só libera a API para quem paga a assinatura de desenvolvedor. Se você assinar, preencha os dados abaixo. Caso contrário, use o intervals.icu, que é gratuito.</p><div id="stv"></div>`;
+ el.innerHTML=`<div class="seg" style="grid-template-columns:repeat(4,1fr);margin-top:0">${opts.map(([k,l])=>`<button data-src="${k}" class="${k===src?"on":""}" style="font-size:12px;padding:8px 2px">${l}</button>`).join("")}</div><div style="margin-top:12px">${body}</div>`;
+ el.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ s.runSource=b.dataset.src; save(); runSourcePanel(); });
+ const ar=document.getElementById("addrun"); if(ar) ar.onclick=()=>runSheet();
+ const kk=document.getElementById("ickey"); if(kk) kk.onchange=e=>{ s.icu.key=e.target.value.trim(); save(); };
+ const ic1=document.getElementById("icon"); if(ic1) ic1.onclick=()=>{ s.icu.key=document.getElementById("ickey").value.trim(); save(); icuConnect(); };
+ const ic2=document.getElementById("icsync"); if(ic2) ic2.onclick=()=>icuSync(true);
+ const ic3=document.getElementById("icoff"); if(ic3) ic3.onclick=()=>ask("Desconectar o intervals.icu?","As corridas já importadas continuam no app.","Desconectar",()=>{ s.icu.ok=false; save(); vCfg(); toast("intervals.icu desconectado"); },true);
+ if(src==="strava") stravaPanel();
+}
+
 /* ---------- Strava ---------- */
 const STRAVA_REDIRECT="https://localhost/";
 function stravaOn(){ const s=load(); return !!(s.strava&&s.strava.access); }
@@ -636,12 +690,12 @@ async function stravaSync(manual){ const s=load(); if(!stravaOn()) return; try{
   const tok=await stravaAccess(), after=Math.floor(Math.max(Date.now()-90*864e5,(s.strava.lastSync||0)-3*864e5)/1000);
   const r=await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`,{headers:{Authorization:"Bearer "+tok}}); const list=await r.json(); if(!Array.isArray(list)) throw new Error(list.message||"Resposta inesperada");
   const runs=list.filter(a=>/Run/.test(a.sport_type||a.type)).map(a=>({id:a.id,date:a.start_date,local:a.start_date_local,km:Math.round(a.distance/10)/100,min:Math.round(a.moving_time/60),hr:a.average_heartrate||null,wt:a.workout_type||0,name:a.name}));
-  const by={}; (s.runs||[]).forEach(x=>by[x.id]=x); runs.forEach(x=>by[x.id]=x); s.runs=Object.values(by).sort((a,b)=>a.date.localeCompare(b.date)); s.strava.lastSync=Date.now(); save(); checkAchievements();
+  mergeRuns(runs,"strava"); s.strava.lastSync=Date.now(); save(); checkAchievements();
   if(manual) toast(`Strava sincronizado: ${runs.length} corrida${runs.length===1?"":"s"} encontrada${runs.length===1?"":"s"}`); if(tab!=="home"||!s.active) rerenderKeep();
  }catch(e){ if(manual) toast("Strava: "+esc(e.message||e)); } }
 async function stravaCallback(){ const q=new URLSearchParams(location.search); if(q.get("state")!=="strava") return false; history.replaceState(null,"",location.pathname); tab="cfg";
  if(q.get("error")||!q.get("code")){ toast("Conexão com o Strava cancelada"); return true; }
- try{ await stravaToken({code:q.get("code"),grant_type:"authorization_code"}); toast("Strava conectado"); await stravaSync(true); }catch(e){ toast("Strava: "+esc(e.message||e)); } render(); return true; }
+ try{ await stravaToken({code:q.get("code"),grant_type:"authorization_code"}); load().runSource="strava"; save(); toast("Strava conectado"); await stravaSync(true); }catch(e){ toast("Strava: "+esc(e.message||e)); } render(); return true; }
 function runsOn(iso){ return (load().runs||[]).filter(r=>(r.local||r.date).slice(0,10)===iso); }
 
 /* ---------- ui helpers ---------- */
@@ -688,7 +742,7 @@ function vHome(){
  const doneKeys=new Set(weekSess.map(x=>x.key));
  app.innerHTML=`<div class="wrap">
  <div class="top"><div class="hello"><div><div class="eyebrow">${greet}, Adriano</div><h1>Hoje</h1></div><button class="lvl" id="lvl" style="--p:${levelInfo().pct}" aria-label="Nível e conquistas"><span>${levelInfo().L}</span></button></div><p class="quote">${esc(quoteOfDay())}</p></div>
- <div class="week">${days.map(x=>`<div class="day ${x.iso===today?"today":""} ${x.done?"done":""}"><div class="d">${DOW[x.d.getDay()]}</div><div class="n">${x.d.getDate()}</div><div class="m ${!x.done&&RUN[x.d.getDay()]?"run":""}" ${!stravaOn()&&RUN[x.d.getDay()]&&x.d<=new Date()?`data-run="${x.iso}"`:""} style="${(load().skipRuns||[]).includes(x.iso)?"text-decoration:line-through;opacity:.5":""}">${(()=>{ const rr=runsOn(x.iso), km=rr.reduce((a,r)=>a+r.km,0); if(x.done) return x.done.join("")+(km?`<span style="color:var(--info)">·</span>`:""); if(km) return `<span style="color:var(--info)">${fmtKg(km)}k</span>`; return !stravaOn()&&RUN[x.d.getDay()]?(x.d.getDay()===2?"TIRO":"LONG"):""; })()}</div></div>`).join("")}</div>
+ <div class="week">${days.map(x=>`<div class="day ${x.iso===today?"today":""} ${x.done?"done":""}"><div class="d">${DOW[x.d.getDay()]}</div><div class="n">${x.d.getDate()}</div><div class="m ${!x.done&&RUN[x.d.getDay()]?"run":""}" ${!realRuns()&&RUN[x.d.getDay()]&&x.d<=new Date()?`data-run="${x.iso}"`:""} style="${(load().skipRuns||[]).includes(x.iso)?"text-decoration:line-through;opacity:.5":""}">${(()=>{ const rr=runsOn(x.iso), km=rr.reduce((a,r)=>a+r.km,0); if(x.done) return x.done.join("")+(km?`<span style="color:var(--info)">·</span>`:""); if(km) return `<span style="color:var(--info)">${fmtKg(km)}k</span>`; return !realRuns()&&RUN[x.d.getDay()]?(x.d.getDay()===2?"TIRO":"LONG"):""; })()}</div></div>`).join("")}</div>
  <div class="hero">
   <div class="eyebrow" style="color:#ffb59c">Próximo da fila • Fase ${ph}</div>
   <div style="display:flex;align-items:flex-end;gap:14px;margin-top:8px"><div class="big disp">${next}</div><div class="ttl">${esc(W.sub.replace(/ • /g," · "))}</div></div>
@@ -716,6 +770,7 @@ function vHome(){
  bindRecovery();
  document.getElementById("lvl").onclick=levelSheet; document.getElementById("expr").onclick=()=>expressSheet(ph,next);
  const cyb=document.getElementById("cyc"); if(cyb) cyb.onclick=cycleSheet; const rpb=document.getElementById("rep"); if(rpb) rpb.onclick=()=>{ reportSheet(1); };
+ if(s.runSource==="manual") app.querySelectorAll(".week .day").forEach((el,i)=>{ const iso=days[i].iso; if(parseISO(iso)<=new Date()) el.onclick=()=>runSheet(iso); });
  app.querySelectorAll("[data-run]").forEach(el=>el.parentElement.onclick=()=>{ const iso=el.dataset.run, sk=s.skipRuns||(s.skipRuns=[]), i=sk.indexOf(iso); i<0?sk.push(iso):sk.splice(i,1); save(); vHome(); toast(i<0?"Corrida marcada como não feita":"Corrida marcada como feita"); });
  document.getElementById("go").onclick=()=>startWorkout(next);
  document.getElementById("pick").onclick=()=>openSheet(`<h2>Treino de hoje</h2><p class="mut small" style="margin:6px 0 4px">Fase ${ph}. A fila segue a partir do treino que você fizer.</p>${KEYS.map(k=>`<button class="opt ${k===next?"cur":""}" data-k="${k}"><div class="hcard k" style="width:46px;height:46px;padding:0;margin:0;background:var(--s3)"><span class="disp" style="font-weight:800;font-size:24px;color:var(--acc)">${k}</span></div><div><b>${esc(workout(ph,k).sub)}</b><div class="small mut">${workout(ph,k).main.length+workout(ph,k).core.length} exercícios</div></div></button>`).join("")}`)
@@ -957,8 +1012,8 @@ function calendarHTML(){
  let cells=["S","T","Q","Q","S","S","D"].map(d=>`<div class="h">${d}</div>`).join("")+Array(first).fill('<div class="c o"></div>').join("");
  let cnt=0;
  for(let d=1;d<=days;d++){ const dt=new Date(y,mo,d), iso=localISO(dt), w=by[iso], run=RUN[dt.getDay()]; if(w) cnt+=w.length;
-  const rk=runsOn(iso).reduce((a,r)=>a+r.km,0), showRun=stravaOn()?rk>0:(run&&!w);
-  cells+=`<div class="c ${w?"w":""} ${iso===today?"t":""}">${w?`<b>${w.join("")}</b>`:d}${showRun?`<span class="r" ${stravaOn()?'style="width:6px;height:6px"':""}></span>`:""}</div>`; }
+  const rk=runsOn(iso).reduce((a,r)=>a+r.km,0), showRun=realRuns()?rk>0:(run&&!w);
+  cells+=`<div class="c ${w?"w":""} ${iso===today?"t":""}">${w?`<b>${w.join("")}</b>`:d}${showRun?`<span class="r" ${realRuns()?'style="width:6px;height:6px"':""}></span>`:""}</div>`; }
  return `<div class="panel"><div class="calnav"><button class="ibtn" id="cp" aria-label="Mês anterior">${ic("back",18)}</button><b>${MES[mo]} ${y} <span class="mut small" style="font-weight:600;text-transform:none">• ${cnt} treino${cnt===1?"":"s"}</span></b><button class="ibtn" id="cn" aria-label="Próximo mês" ${calOff>=0?"disabled style=\"opacity:.3\"":""}>${ic("next",18)}</button></div>
   <div class="cal">${cells}</div><div class="legend"><span><i style="background:var(--acc)"></i>Treino (letra)</span><span><i style="background:var(--info);border-radius:50%"></i>Dia de corrida</span></div></div>`;
 }
@@ -1013,7 +1068,7 @@ function vProg(){
   </div></div>
   <div class="sec"><div class="sech"><h3>Séries por músculo</h3><div class="seg" style="margin:0;grid-template-columns:auto auto"><button data-wk="0" class="${muscleWeek===0?"on":""}" style="padding:5px 10px">Esta semana</button><button data-wk="1" class="${muscleWeek===1?"on":""}" style="padding:5px 10px">Anterior</button></div></div><div class="panel" id="mus"></div></div>
   <div class="sec"><div class="sech"><h3>Lombar</h3><span class="small mut">desconforto 0–10</span></div><div class="panel" id="painp"></div></div>
-  ${(load().runs||[]).length?`<div class="sec"><div class="sech"><h3 class="strava">Corrida (Strava)</h3><span class="small mut">km por semana</span></div><div class="panel"><canvas id="c3"></canvas><p class="small mut" style="margin:8px 0 0">Total no período: ${fmtKg(totalKm())} km em ${(load().runs||[]).length} corridas.</p></div></div>`:""}
+  ${(load().runs||[]).length?`<div class="sec"><div class="sech"><h3>Corrida</h3><span class="small mut">km por semana</span></div><div class="panel"><canvas id="c3"></canvas><p class="small mut" style="margin:8px 0 0">Total no período: ${fmtKg(totalKm())} km em ${(load().runs||[]).length} corridas.</p>${load().runSource==="manual"?`<div class="gap"></div><button class="btn2" id="addrun2">${ic("plus",16)} Registrar corrida</button>`:""}</div></div>`:(load().runSource==="manual"?`<div class="sec"><div class="panel"><button class="btn2" id="addrun2">${ic("plus",16)} Registrar corrida</button></div></div>`:"")}
   <div class="sec"><div class="sech"><h3>Volume semanal</h3><span class="small mut">kg × reps</span></div><div class="panel">${wk.length?`<canvas id="c2"></canvas>`:`<div class="empty small">Sem dados ainda.</div>`}</div></div></div>`;
  if(names.length){
   document.getElementById("pickex").onclick=()=>{ openSheet(`<h2>Exercício</h2><div class="gap"></div><input class="search" id="q" placeholder="Buscar exercício"><div class="exlist" id="el"></div>`);
@@ -1025,7 +1080,7 @@ function vProg(){
   lineChart(document.getElementById("c1"),pts.map(p=>{ const d=parseISO(localISO(p.d)); return d.getDate()+"/"+(d.getMonth()+1); }),[{v:pts.map(p=>p.top),c:"#ff5a36"},{v:pts.map(p=>Math.round(p.e*10)/10),c:"#7cb4ff"}]);
   const f0=pts[0], l=pts[pts.length-1]; document.getElementById("c1l").innerHTML=`<span style="color:#ff5a36">●</span> maior carga &nbsp; <span style="color:#7cb4ff">●</span> 1RM estimado${pts.length>1?` &nbsp;•&nbsp; <b style="color:${l.top>=f0.top?"var(--ok)":"var(--warn)"}">${l.top-f0.top>=0?"+":""}${fmtKg(l.top-f0.top)} kg</b> desde o início`:""}`;
  }
- bindRecovery(); document.getElementById("rep2").onclick=()=>reportSheet(0);
+ bindRecovery(); document.getElementById("rep2").onclick=()=>reportSheet(0); const ar2=document.getElementById("addrun2"); if(ar2) ar2.onclick=()=>runSheet();
  const c3=document.getElementById("c3"); if(c3){ const wkm={}; (load().runs||[]).forEach(r=>{ const k=localISO(monday(new Date(r.date))); wkm[k]=(wkm[k]||0)+r.km; }); const ks=Object.keys(wkm).sort().slice(-8); barChart(c3,ks.map(k=>k.slice(8,10)+"/"+k.slice(5,7)),ks.map(k=>Math.round(wkm[k]*10)/10),v=>fmtKg(v)+" km"); }
  if(wk.length) barChart(document.getElementById("c2"),wk.map(k=>k.slice(8,10)+"/"+k.slice(5,7)),wk.map(k=>Math.round(weeks[k])));
  // muscles
@@ -1067,10 +1122,10 @@ function vCfg(){
   <div class="switch"><div><b style="font-weight:600">Som e vibração no descanso</b><div class="small mut">Avisa quando o timer termina</div></div><button class="tg ${s.restSound?"on":""}" data-tg="restSound" aria-label="Som e vibração"></button></div>
   <div class="switch"><div><b style="font-weight:600">Séries de aquecimento</b><div class="small mut">50% e 75% antes dos compostos pesados</div></div><button class="tg ${s.warmSets?"on":""}" data-tg="warmSets" aria-label="Séries de aquecimento"></button></div>
   <div class="switch"><div><b style="font-weight:600">Perguntar RIR</b><div class="small mut">Repetições na reserva após cada série</div></div><button class="tg ${s.askRir?"on":""}" data-tg="askRir" aria-label="Perguntar RIR"></button></div>
-  <div class="switch"><div><b style="font-weight:600">Contar corridas na recuperação</b><div class="small mut">${stravaOn()?"Usando as corridas reais do Strava":"Considera tiro na terça e longão no sábado"}</div></div><button class="tg ${s.countRuns?"on":""}" data-tg="countRuns" aria-label="Contar corridas"></button></div>
+  <div class="switch"><div><b style="font-weight:600">Contar corridas na recuperação</b><div class="small mut">${realRuns()?"Usando as corridas registradas ("+RUN_SRC[s.runSource]+")":"Considera tiro na terça e longão no sábado"}</div></div><button class="tg ${s.countRuns?"on":""}" data-tg="countRuns" aria-label="Contar corridas"></button></div>
   <div class="switch"><div><b style="font-weight:600">Manter tela ligada</b><div class="small mut">Enquanto um treino estiver aberto</div></div><button class="tg ${s.wake?"on":""}" data-tg="wake" aria-label="Manter tela ligada"></button></div>
  </div></div>
- <div class="sec"><div class="sech"><h3 class="strava">Strava</h3>${stravaOn()?`<span class="chip ok">Conectado</span>`:""}</div><div class="panel" id="stv"></div></div>
+ <div class="sec"><div class="sech"><h3>Corridas</h3><span class="small mut">fonte dos dados</span></div><div class="panel" id="runsrc"></div></div>
  <div class="sec"><div class="sech"><h3>Ciclo</h3><span class="small mut">Ciclo ${s.cycle||1}</span></div><div class="panel"><p class="small mut" style="margin:0 0 12px">Gera as próximas 12 semanas trocando exercícios estagnados e ajustando o volume por músculo com base no seu histórico.</p><button class="btn2" id="cyc2">Gerar próximo ciclo</button></div></div>
  <div class="sec"><div class="sech"><h3>Barras da academia</h3></div><div class="panel"><div class="formgrid">
   <label>Barra olímpica (kg)<input class="field" id="barKg" type="number" inputmode="decimal" step="0.5" value="${s.barKg}"></label>
@@ -1091,7 +1146,7 @@ function vCfg(){
  document.getElementById("rst").onclick=()=>ask("Reiniciar o ciclo?","A semana 1 passa a ser esta semana e a fila volta para o treino A. Seu histórico continua salvo.","Reiniciar",()=>{ s.start=todayISO(); s.phaseOverride=null; s.next="A"; save(); render(); toast("Ciclo reiniciado"); },true);
  document.getElementById("exp").onclick=exportBackup; document.getElementById("csv").onclick=exportCSV;
  document.getElementById("cyc2").onclick=cycleSheet; const abk=document.getElementById("abk"); if(abk) abk.onclick=async()=>{ await autoBackup(true); vCfg(); toast(load().autoBackupErr?"Não foi possível salvar o backup":"Backup salvo em Documentos/MeuTreino"); };
- stravaPanel();
+ runSourcePanel();
  ["barKg","smithKg"].forEach(k=>document.getElementById(k).onchange=e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ s[k]=v; save(); toast("Peso da barra salvo"); } });
  document.getElementById("imp").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!Array.isArray(d.sessions)) throw 0;
    ask("Importar backup?",`O arquivo tem ${d.sessions.length} treinos. Os dados atuais deste celular serão substituídos.`,"Importar",()=>{ mem=Object.assign(load(),d); if(mem.active&&mem.active.v!==2) mem.active=null; save(); render(); toast("Backup importado"); }); }catch(err){ toast("Esse arquivo não é um backup do Meu Treino"); } }; r.readAsText(f); };
@@ -1102,7 +1157,7 @@ function stravaPanel(){ const s=load(), el=document.getElementById("stv"); if(!e
   <p class="small mut" style="margin:10px 0 0">As corridas entram no mapa de recuperação (com distância, frequência cardíaca e treinos intervalados), no calendário e no relatório semanal.</p>`;
   document.getElementById("sv1").onclick=()=>stravaSync(true);
   document.getElementById("sv2").onclick=()=>ask("Desconectar o Strava?","As corridas já importadas continuam no app. A recuperação volta a usar terça e sábado como referência.","Desconectar",()=>{ st.access=null; st.refresh=null; save(); vCfg(); toast("Strava desconectado"); },true); return; }
- el.innerHTML=`<p class="small mut" style="margin:0">Para conectar, crie um aplicativo gratuito em <b style="color:var(--txt)">strava.com/settings/api</b> com o domínio de callback <b style="color:var(--txt)">localhost</b> e copie os dados abaixo.</p>
+ el.innerHTML=`<p class="small mut" style="margin:0">Para conectar, crie um aplicativo em <b style="color:var(--txt)">strava.com/settings/api</b> com o domínio de callback <b style="color:var(--txt)">localhost</b> e copie os dados abaixo.</p>
   <div class="formgrid" style="margin-top:12px"><label>Client ID<input class="field" id="sid" inputmode="numeric" value="${esc(st.clientId||"")}"></label><label>Client Secret<input class="field" id="ssec" type="password" value="${esc(st.clientSecret||"")}"></label></div>
   <div class="gap"></div><button class="cta" id="scon" style="background:#fc4c02;box-shadow:none">Conectar com Strava</button>
   ${CAP?"":`<p class="small mut" style="margin:10px 0 0">Disponível no app instalado (APK).</p>`}`;
@@ -1122,8 +1177,8 @@ function exportCSV(){ const s=load(), q=v=>{ const t=String(v==null?"":v); retur
 
 /* ---------- boot ---------- */
 (async()=>{ const cb=await stravaCallback(); if(!cb) render(); if(load().active){ wake(true); nativeSync(); } autoBackup(false); checkAchievements();
- const st=load().strava; if(stravaOn()&&(!st.lastSync||Date.now()-st.lastSync>30*60000)) stravaSync(false); })();
-document.addEventListener("visibilitychange",()=>{ if(document.visibilityState!=="visible") return; if(load().active){ nativeSync(); if(tab==="home") rerenderKeep(); } const st=load().strava; if(stravaOn()&&Date.now()-(st.lastSync||0)>30*60000) stravaSync(false); });
+ if(!load().runSource&&stravaOn()){ load().runSource="strava"; save(); } if(Date.now()-(lastSyncOf()||0)>30*60000) syncRuns(false); })();
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState!=="visible") return; if(load().active){ nativeSync(); if(tab==="home") rerenderKeep(); } if(Date.now()-(lastSyncOf()||0)>30*60000) syncRuns(false); });
 if("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
