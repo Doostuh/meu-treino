@@ -49,14 +49,16 @@ public class WorkoutNotifPlugin extends Plugin {
         st.setLabel = call.getString("setLabel", "");
         st.next = call.getString("next", "");
         st.key = call.getString("key", "");
-        st.kg = call.getDouble("kg", 0.0);
-        st.reps = call.getInt("reps", 0);
-        st.kgStep = call.getDouble("kgStep", 2.5);
-        st.restSec = call.getInt("restSec", 0);
-        st.finished = call.getBoolean("finished", false);
-        st.sound = call.getBoolean("sound", true);
-        Double restEnd = call.getDouble("restEnd", 0.0);
-        st.restEnd = restEnd == null ? 0L : restEnd.longValue();
+        // Lê os números direto do JSON: valores inteiros grandes (como o horário em ms)
+        // chegam como Long e o getDouble/getInt do PluginCall os ignora.
+        JSObject d = call.getData();
+        st.kg = d.optDouble("kg", 0.0);
+        st.reps = d.optInt("reps", 0);
+        st.kgStep = d.optDouble("kgStep", 2.5);
+        st.restSec = d.optInt("restSec", 0);
+        st.finished = d.optBoolean("finished", false);
+        st.sound = d.optBoolean("sound", true);
+        st.restEnd = (long) d.optDouble("restEnd", 0.0);
         Intent i = new Intent(getContext(), WorkoutService.class);
         i.setAction(WorkoutService.ACTION_REFRESH);
         ContextCompat.startForegroundService(getContext(), i);
