@@ -498,7 +498,39 @@ function fatigueMap(at){
 }
 function recoveryMap(){ const F=fatigueMap(), R={}; Object.keys(RM).forEach(m=>{ const f=F[m], cap=RM_CAP[m]; const pct=Math.max(0,Math.min(100,Math.round(100-f/cap*100))); const h=f>0.1*cap?Math.ceil(RM_TAU[m]*Math.log(f/(0.1*cap))):0; R[m]={pct,h}; }); return R; }
 function recColor(p){ return p>=90?"#34d399":p>=70?"#a3d95b":p>=50?"#fbbf24":p>=30?"#fb8a3c":"#ef4444"; }
-function bodySVG(side,R){
+function bodySVGf(side,R){
+ const base="#1f232b", base2="#363d4a", c=m=>recColor(R[m].pct);
+ const M=(m,d)=>`<path class="m" data-mu="${m}" d="${d}" fill="${c(m)}" fill-opacity=".92" stroke="#0b0c0f" stroke-width="1.1" stroke-linejoin="round"/><path class="m" data-mu="${m}" d="${d}" transform="translate(200 0) scale(-1 1)" fill="${c(m)}" fill-opacity=".92" stroke="#0b0c0f" stroke-width="1.1" stroke-linejoin="round"/>`;
+ const C=(m,d)=>`<path class="m" data-mu="${m}" d="${d}" fill="${c(m)}" fill-opacity=".92" stroke="#0b0c0f" stroke-width="1.1" stroke-linejoin="round"/>`;
+ const sym=d=>`<path d="${d}"/><path d="${d}" transform="translate(200 0) scale(-1 1)"/>`;
+ const hairF=`<path fill="${base2}" d="M85 27 C83 8 117 8 115 27 C117 38 116 46 112 50 L106 42 L94 42 L88 50 C84 46 83 38 85 27 Z"/>`;
+ const hairB=`<path fill="${base2}" d="M86 25 C86 8 114 8 114 25 C114 35 108 41 100 41 C92 41 86 35 86 25 Z"/><path fill="${base2}" d="M96 34 C93 50 96 64 100 74 C104 64 107 50 104 34 Z"/>`;
+ const sil=(hair,front)=>`${front?hair:""}<g fill="${base}"><ellipse cx="100" cy="25" rx="11.5" ry="14.5"/><path d="M93 37 L107 37 L109 52 L91 52 Z"/>
+  <path d="M64 60 C78 52 122 52 136 60 L142 72 C144 92 134 112 126 130 C124 142 130 158 137 176 L63 176 C70 158 76 142 74 130 C66 112 56 92 58 72 Z"/>
+  ${sym("M58 64 C46 68 40 82 40 100 L38 140 C36 160 37 180 40 200 L48 200 C49 180 50 160 51 142 L56 108 Z")}
+  <path d="M63 172 L137 172 C143 200 139 236 128 270 L122 300 L120 372 L106 372 L104 300 L101 226 L99 226 L96 300 L94 372 L80 372 L78 300 L72 270 C61 236 57 200 63 172 Z"/></g>
+  ${front?"":hair}<g fill="${base2}">${sym("M38 150 C38 168 39 184 41 198 L47 198 C48 184 49 168 50 150 Z")}</g>`;
+ if(side==="front"){
+  const abs=[[104,118],[120,134],[136,148]].map(([y1,y2])=>C("abdomen",`M90 ${y1+2} Q90 ${y1} 92 ${y1} L97 ${y1} Q98 ${y1} 98 ${y1+2} L98 ${y2-2} Q98 ${y2} 96 ${y2} L92 ${y2} Q90 ${y2} 90 ${y2-2} Z`)+C("abdomen",`M102 ${y1+2} Q102 ${y1} 104 ${y1} L108 ${y1} Q110 ${y1} 110 ${y1+2} L110 ${y2-2} Q110 ${y2} 108 ${y2} L104 ${y2} Q102 ${y2} 102 ${y2-2} Z`)).join("");
+  return `<svg viewBox="0 0 200 384" role="img" aria-label="Músculos de frente">${sil(hairF,true)}
+  ${M("ombros","M60 62 C50 64 44 74 44 88 C50 84 56 81 62 79 L66 64 Z")}
+  ${M("peito","M98 66 L98 88 C88 93 77 91 69 85 C68 77 71 70 77 67 C84 63 92 63 98 66 Z")}
+  ${M("biceps","M44 94 C49 90 55 94 55 102 L52 128 C48 133 43 131 41 124 L42 104 Z")}
+  ${abs}${C("abdomen","M91 151 L109 151 Q110 158 105 165 L95 165 Q90 158 91 151 Z")}
+  ${M("abdomen","M76 104 L86 106 L86 150 L80 156 C76 138 74 122 76 104 Z")}
+  ${M("quadriceps","M70 192 C80 182 95 186 98 198 L96 248 C94 270 88 284 82 288 C74 282 68 266 67 244 C65 224 66 206 70 192 Z")}
+  ${M("panturrilha","M80 302 C86 296 94 300 95 310 L93 340 C89 352 84 354 81 348 C77 334 77 316 80 302 Z")}</svg>`; }
+ return `<svg viewBox="0 0 200 384" role="img" aria-label="Músculos de costas">${sil(hairB,false)}
+  ${C("trapezio","M86 46 C93 43 107 43 114 46 L128 60 L116 70 L106 96 L100 102 L94 96 L84 70 L72 60 Z")}
+  ${M("ombros","M60 62 C50 64 44 74 44 88 C50 84 56 81 62 79 L68 64 Z")}
+  ${M("costas","M72 72 L86 74 L96 104 L98 128 C88 130 80 126 77 118 C70 102 66 88 72 72 Z")}
+  ${M("triceps","M43 94 C48 90 55 93 55 102 L52 128 C48 133 42 131 41 124 L41 104 Z")}
+  ${C("lombar","M86 132 L99 132 L99 160 C93 161 88 160 84 158 Z")}${C("lombar","M114 132 L101 132 L101 160 C107 161 112 160 116 158 Z")}
+  ${M("gluteo","M67 166 C80 156 98 160 99 170 L99 205 C86 216 69 211 64 196 C61 184 62 172 67 166 Z")}
+  ${M("posterior","M66 214 C78 220 92 220 98 214 L96 252 C92 274 86 286 80 288 C72 280 67 264 66 244 Z")}
+  ${M("panturrilha","M74 300 C82 292 95 296 96 308 L94 336 C90 352 83 356 77 350 C71 334 71 316 74 300 Z")}</svg>`;
+}
+function bodySVG(side,R){ if(PROFILE.body==="f") return bodySVGf(side,R);
  const base="#1f232b", base2="#262b34", c=m=>recColor(R[m].pct);
  const M=(m,d)=>`<path class="m" data-mu="${m}" d="${d}" fill="${c(m)}" fill-opacity=".92" stroke="#0b0c0f" stroke-width="1.1" stroke-linejoin="round"/><path class="m" data-mu="${m}" d="${d}" transform="translate(200 0) scale(-1 1)" fill="${c(m)}" fill-opacity=".92" stroke="#0b0c0f" stroke-width="1.1" stroke-linejoin="round"/>`;
  const C=(m,d)=>`<path class="m" data-mu="${m}" d="${d}" fill="${c(m)}" fill-opacity=".92" stroke="#0b0c0f" stroke-width="1.1" stroke-linejoin="round"/>`;
