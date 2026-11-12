@@ -74,6 +74,9 @@ public class WorkoutNotifPlugin extends Plugin {
         st.sound = d.optBoolean("sound", true);
         st.restEnd = (long) d.optDouble("restEnd", 0.0);
         Sounds.useAlarm = d.optBoolean("alarm", false);
+        st.rirKey = d.optString("rirKey", "");
+        st.rir = d.optInt("rir", -1);
+        st.rirLabel = d.optString("rirLabel", "");
         Intent i = new Intent(getContext(), WorkoutService.class);
         i.setAction(WorkoutService.ACTION_REFRESH);
         ContextCompat.startForegroundService(getContext(), i);

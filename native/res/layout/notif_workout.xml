@@ -45,6 +45,29 @@
             android:textStyle="bold" android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
     </LinearLayout>
 
+    <LinearLayout android:id="@+id/n_rirbox" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:layout_marginTop="8dp">
+        <TextView android:id="@+id/n_rirlbl" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Compat.Notification" android:maxLines="1" android:ellipsize="end"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="4dp">
+        <TextView android:id="@+id/n_rir0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp" android:gravity="center"
+            android:background="@drawable/notif_btn" android:text="0" android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
+        <TextView android:id="@+id/n_rir1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp" android:layout_marginLeft="5dp" android:gravity="center"
+            android:background="@drawable/notif_btn" android:text="1" android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
+        <TextView android:id="@+id/n_rir2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp" android:layout_marginLeft="5dp" android:gravity="center"
+            android:background="@drawable/notif_btn" android:text="2" android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
+        <TextView android:id="@+id/n_rir3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp" android:layout_marginLeft="5dp" android:gravity="center"
+            android:background="@drawable/notif_btn" android:text="3" android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
+        <TextView android:id="@+id/n_rir4" android:layout_width="0dp" android:layout_weight="1" android:layout_height="34dp" android:layout_marginLeft="5dp" android:gravity="center"
+            android:background="@drawable/notif_btn" android:text="4+" android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"/>
+        </LinearLayout>
+    </LinearLayout>
+
     <TextView android:id="@+id/n_done" android:layout_width="match_parent" android:layout_height="42dp" android:layout_marginTop="8dp"
         android:gravity="center" android:background="@drawable/notif_btn_acc" android:text="✓  Concluir série"
         android:textColor="#FF06251A" android:textStyle="bold" android:textSize="15sp"/>

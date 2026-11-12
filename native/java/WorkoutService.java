@@ -44,6 +44,7 @@ public class WorkoutService extends Service {
     static final String ACTION_DONE = "br.adriano.meutreino.DONE";
     static final String ACTION_ADD15 = "br.adriano.meutreino.ADD15";
     static final String ACTION_SKIP = "br.adriano.meutreino.SKIP";
+    static final String ACTION_RIR = "br.adriano.meutreino.RIR";
 
     static class State {
         String title = "Treino", exercise = "", setLabel = "", next = "", key = "";
@@ -51,6 +52,8 @@ public class WorkoutService extends Service {
         int reps = 0, restSec = 0;
         long restEnd = 0;
         boolean finished = false, sound = true;
+        String rirKey = "", rirLabel = "";
+        int rir = -1;
     }
 
     static final State STATE = new State();
@@ -73,10 +76,10 @@ public class WorkoutService extends Service {
         String a = intent != null && intent.getAction() != null ? intent.getAction() : ACTION_REFRESH;
         State s = STATE;
         switch (a) {
-            case ACTION_KG_MINUS: s.kg = Math.max(0, s.kg - s.kgStep); break;
-            case ACTION_KG_PLUS: s.kg = s.kg + s.kgStep; break;
-            case ACTION_REP_MINUS: s.reps = Math.max(0, s.reps - 1); break;
-            case ACTION_REP_PLUS: s.reps = s.reps + 1; break;
+            case ACTION_KG_MINUS: s.kg = Math.max(0, Math.round((s.kg - s.kgStep) * 100) / 100.0); emitVals(); break;
+            case ACTION_KG_PLUS: s.kg = Math.round((s.kg + s.kgStep) * 100) / 100.0; emitVals(); break;
+            case ACTION_REP_MINUS: s.reps = Math.max(0, s.reps - 1); emitVals(); break;
+            case ACTION_REP_PLUS: s.reps = s.reps + 1; emitVals(); break;
             case ACTION_DONE: {
                 if (s.finished || s.key.isEmpty()) break;
                 if (s.restSec > 0) s.restEnd = System.currentTimeMillis() + s.restSec * 1000L;
@@ -100,7 +103,15 @@ public class WorkoutService extends Service {
                 JSObject d = new JSObject(); d.put("type", "rest"); d.put("restEnd", 0); WorkoutNotifPlugin.emit(d);
                 break;
             }
-            default: break;
+            default:
+                if (a.startsWith(ACTION_RIR) && !s.rirKey.isEmpty()) {
+                    int v = Integer.parseInt(a.substring(ACTION_RIR.length() + 1));
+                    s.rir = v;
+                    JSObject d = new JSObject(); d.put("type", "rir"); d.put("key", s.rirKey); d.put("v", v);
+                    WorkoutNotifPlugin.emit(d);
+                    buzz(new long[]{0, 25});
+                }
+                break;
         }
         scheduleRest();
         Notification n = build();
@@ -151,6 +162,11 @@ public class WorkoutService extends Service {
         nm.notify(NOTIF_ID + 1, b.build());
         nm.notify(NOTIF_ID, build());
         JSObject d = new JSObject(); d.put("type", "restEnded"); WorkoutNotifPlugin.emit(d);
+    }
+
+    private void emitVals() {
+        JSObject d = new JSObject(); d.put("type", "vals"); d.put("key", STATE.key); d.put("kg", STATE.kg); d.put("reps", STATE.reps);
+        WorkoutNotifPlugin.emit(d);
     }
 
     private void buzz(long[] pattern) {
@@ -212,6 +228,17 @@ public class WorkoutService extends Service {
             small.setViewVisibility(R.id.s_chrono, View.GONE);
         }
 
+        boolean showRir = !s.rirKey.isEmpty();
+        big.setViewVisibility(R.id.n_rirbox, showRir ? View.VISIBLE : View.GONE);
+        if (showRir) {
+            big.setTextViewText(R.id.n_rirlbl, s.rirLabel.isEmpty() ? "Repetições na reserva (RIR)" : s.rirLabel);
+            int[] ids = {R.id.n_rir0, R.id.n_rir1, R.id.n_rir2, R.id.n_rir3, R.id.n_rir4};
+            for (int k = 0; k < 5; k++) {
+                big.setInt(ids[k], "setBackgroundResource", s.rir == k ? R.drawable.notif_btn_on : R.drawable.notif_btn);
+                big.setOnClickPendingIntent(ids[k], pi(ACTION_RIR + "_" + k, 20 + k));
+            }
+            big.setViewVisibility(R.id.n_next, View.GONE);
+        }
         big.setOnClickPendingIntent(R.id.n_kg_minus, pi(ACTION_KG_MINUS, 1));
         big.setOnClickPendingIntent(R.id.n_kg_plus, pi(ACTION_KG_PLUS, 2));
         big.setOnClickPendingIntent(R.id.n_rep_minus, pi(ACTION_REP_MINUS, 3));

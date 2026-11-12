@@ -291,17 +291,40 @@ body.focus #ringov{display:block}
 .tools button svg{color:var(--txt)}
 .strip{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;padding:2px 1px;scroll-behavior:smooth}
 .strip::-webkit-scrollbar{display:none}
-.sq{flex:0 0 60px;height:72px;border-radius:13px;background:var(--s1);position:relative;overflow:hidden;border:2px solid transparent;padding:0}
-.sq .im{height:44px;background:#fff center/cover no-repeat}
+.sq{flex:0 0 78px;height:98px;border-radius:13px;background:var(--s1);position:relative;overflow:hidden;border:2px solid transparent;padding:0}
+.sq .im{height:46px;background:#fff center/cover no-repeat}
 .sq .im.none{background:var(--s2);display:grid;place-items:center;color:var(--dim)}
-.sq .lb{font-size:10px;font-weight:800;text-align:center;padding:3px 2px 0;font-variant-numeric:tabular-nums;color:var(--mut)}
+.sq .nm{font-size:10px;font-weight:700;line-height:1.15;text-align:center;padding:4px 4px 0;color:var(--txt);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:27px}
+.sq .lb{font-size:10px;font-weight:800;text-align:center;padding:2px 2px 0;font-variant-numeric:tabular-nums;color:var(--mut)}
+.setchips{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:6px;flex:0 0 auto}
+.sc{background:var(--s1);border:1.5px solid transparent;border-radius:11px;padding:6px 4px 5px;text-align:center;line-height:1.15}
+.sc small{display:block;font-size:9.5px;font-weight:800;color:var(--mut);letter-spacing:.05em}
+.sc b{display:block;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.sc i{display:block;font-style:normal;font-size:9.5px;font-weight:700;color:var(--info);height:11px}
+.sc.d{background:#0f2a20} .sc.d b{color:var(--ok)}
+.sc.c{border-color:var(--acc)} .sc.c small{color:var(--acc)}
+.sc.p b{color:var(--dim)}
+.sc.x{opacity:.5} .sc.x b{text-decoration:line-through}
+.nextc{cursor:pointer;text-align:left}
+.nextc .eye{margin-left:auto;color:var(--mut);flex:0 0 auto}
+.lastex{width:100%}
+.lastex .t{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between}
+.whyl{color:#9cc6ff}
+.dayrun{display:flex;gap:10px;align-items:center;background:var(--s2);border-radius:14px;padding:12px;margin-top:10px}
+.dayrun .ri{width:40px;height:40px;border-radius:12px;background:#16243a;color:var(--info);display:grid;place-items:center;flex:0 0 auto}
+.daypick{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px;width:100%}
+.dayrun .btn2,.daypick button{background:var(--s3)}
+.daypick button{border-radius:10px;padding:8px 0;font-size:11px;font-weight:700;color:var(--mut);border:1.5px solid transparent}
+.daypick button b{display:block;font-family:var(--disp);font-size:18px;color:var(--txt)}
+.daypick button.cur{border-color:var(--info)} .daypick button.today b{color:var(--acc)}
+.day{cursor:pointer}
 .sq.cur{border-color:var(--acc)} .sq.cur .lb{color:var(--acc)}
 .sq.done{opacity:.55} .sq.done .lb{color:var(--ok)}
 .sq.skip{opacity:.45} .sq.skip .lb{text-decoration:line-through}
 .sq .ck{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--ok);color:#06251a;display:grid;place-items:center}
 .sq.bi::before{content:"";position:absolute;left:-2px;right:-2px;bottom:-2px;height:3px;background:var(--warn)}
 .restv{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:0}
-.bring{position:relative;width:min(62vw,30vh,250px);aspect-ratio:1;max-width:100%}
+.bring{position:relative;width:min(56vw,24vh,230px);aspect-ratio:1;max-width:100%}
 .bring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .bring .v{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:min(16vw,8vh,64px);font-variant-numeric:tabular-nums}
 .bring .v small{display:block;font-family:var(--ui);font-size:12px;font-weight:700;color:var(--mut);text-align:center;letter-spacing:.06em;margin-top:-6px}
@@ -459,7 +482,7 @@ function fatigueMap(at){
  s.sessions.forEach(x=>{ const t=new Date(x.date).getTime(); x.sets.forEach(st=>{ const L=LOAD[GROUP_OF[st.ex]]; if(!L) return; const rirF=st.rir==null?1:st.rir>=4?.7:st.rir>=3?.85:1; Object.entries(L).forEach(([m,w])=>add(m,w*rirF,t)); }); });
  if(s.active){ Object.values(s.active.sets).forEach(st=>{ if(st.w) return; const L=LOAD[GROUP_OF[st.ex]]; if(L) Object.entries(L).forEach(([m,w])=>add(m,w,st.t)); }); }
  if(realRuns()){ (s.runs||[]).forEach(r=>{ const t=new Date(r.date).getTime(); let mlt=r.wt===3?1.35:1; if(r.hr) mlt*=Math.min(1.5,Math.max(.6,(r.hr-115)/35)); const k=r.km*mlt; add("quadriceps",k*.45,t); add("posterior",k*.35,t); add("gluteo",k*.3,t); add("panturrilha",k*.55,t); }); }
- else if(s.countRuns){ for(let d=0;d<7;d++){ const day=new Date(); day.setHours(7,30,0,0); day.setDate(day.getDate()-d); const L=RUN_LOAD[day.getDay()]; if(L&&day.getTime()<=now&&!(s.skipRuns||[]).includes(localISO(day))) Object.entries(L).forEach(([m,v])=>add(m,v,day.getTime())); } }
+ else if(s.countRuns){ const t=todayISO(); plannedRuns(addDays(t,-7),t).forEach(r=>{ if(r.skipped) return; const L=RUN_LOAD[r.type==="tiro"?2:6]; let ts=parseISO(r.iso).getTime()+7.5*36e5; if(r.iso===t) ts=Math.min(ts,now); if(ts<=now) Object.entries(L).forEach(([m,v])=>add(m,v,ts)); }); }
  return F;
 }
 function recoveryMap(){ const F=fatigueMap(), R={}; Object.keys(RM).forEach(m=>{ const f=F[m], cap=RM_CAP[m]; const pct=Math.max(0,Math.min(100,Math.round(100-f/cap*100))); const h=f>0.1*cap?Math.ceil(RM_TAU[m]*Math.log(f/(0.1*cap))):0; R[m]={pct,h}; }); return R; }
@@ -555,15 +578,25 @@ function bestFor(name,excludeId){ let b=0; load().sessions.forEach(s=>{ if(s.id=
 function kgStep(n){ return /halter/i.test(n)?2:2.5; }
 function roundTo(v,st){ return Math.max(0,Math.round(v/st)*st); }
 function suggest(o,j){
- const A=load().active, e=o.ex; if(isTimed(e.r)) return null; const rg=repRange(e.r); if(!rg) return null; const [lo,hi]=rg, st=kgStep(e.n), tR=A.phase===1?2.5:1.5;
- for(let jj=j-1;jj>=0;jj--){ const d=A.sets[o.i+"#"+jj]; if(!d) continue; if(!(d.kg>0)) return {kg:d.kg,reps:Math.min(hi,Math.max(lo,d.reps)),live:true};
-  if(d.rir==null) return {kg:d.kg,reps:Math.min(hi,Math.max(lo,d.reps)),live:true};
-  const e1=d.kg*(1+(d.reps+d.rir)/30); let tgt=Math.min(hi,Math.max(lo,d.reps)); if(d.reps>=hi&&d.rir>tR) tgt=Math.max(lo,hi-2); else if(d.rir<tR-1) tgt=Math.max(lo,Math.min(hi,d.reps-1)); let kg=roundTo(e1/(1+(tgt+tR)/30),st);
-  kg=Math.min(Math.max(kg,roundTo(d.kg*.85,st)),roundTo(d.kg*1.1,st)||d.kg); return {kg,reps:tgt,live:true}; }
+ const A=load().active, e=o.ex; if(isTimed(e.r)) return null; const rg=repRange(e.r); if(!rg) return null; const [lo,hi]=rg, st=kgStep(e.n), tR=A.phase===1?2:1;
+ const cl=r=>Math.min(hi,Math.max(lo,r)), rr=v=>v===4?"4+":v;
+ for(let jj=j-1;jj>=0;jj--){ const d=A.sets[o.i+"#"+jj]; if(!d) continue;
+  if(d.rir==null) return {kg:d.kg,reps:cl(d.reps),live:true,why:"igual à série anterior (marque o RIR para o app ajustar)"};
+  const easy=d.rir-tR;
+  if(!(d.kg>0)){ const r=d.reps+(easy>=2?2:easy>=1?1:easy<=-2?-1:0); return {kg:0,reps:Math.max(1,r),live:true,why:`RIR ${rr(d.rir)} na anterior`}; }
+  if(easy>=1){
+   if(d.reps>=hi){ const steps=d.rir>=4&&d.kg*0.1>=2*st?2:1; return {kg:Math.round((d.kg+steps*st)*100)/100,reps:cl(hi-2),live:true,why:`${d.reps} reps com RIR ${rr(d.rir)}: subir a carga`}; }
+   const r=Math.min(hi,d.reps+Math.min(easy>=2?2:1,hi-d.reps)); return {kg:d.kg,reps:r,live:true,why:`RIR ${rr(d.rir)}: mais repetições`}; }
+  if(easy<=-2){ if(d.reps>lo) return {kg:d.kg,reps:cl(d.reps-1),live:true,why:`RIR ${rr(d.rir)}: muito pesado, segure as reps`};
+   return {kg:Math.max(0,Math.round((d.kg-st)*100)/100),reps:lo,live:true,why:`RIR ${rr(d.rir)} no mínimo da faixa: baixar a carga`}; }
+  return {kg:d.kg,reps:cl(d.reps),live:true,why:`RIR ${rr(d.rir)}: no ponto, repita`}; }
  const last=lastFor(e.n); if(!last) return null; const pv=last.sets[j]||last.sets[last.sets.length-1];
- const allTop=last.sets.length>=o.base.s && last.sets.every(x=>x.reps>=hi && (x.rir==null||x.rir>=1));
- if(allTop&&pv.kg>0) return {kg:pv.kg+st,reps:lo,live:false};
- return {kg:pv.kg,reps:Math.min(hi,pv.reps+((pv.rir!=null&&pv.rir>=3)?1:0)),live:false};
+ const withR=last.sets.filter(x=>x.rir!=null);
+ const topEasy=last.sets.some(x=>x.reps>=hi&&x.rir!=null&&x.rir>=tR+1);
+ const allTop=last.sets.length>=o.base.s&&last.sets.every(x=>x.reps>=hi&&(x.rir==null||x.rir>=1));
+ if(pv.kg>0&&(allTop||topEasy)){ const best=Math.max(...last.sets.map(x=>x.kg)); return {kg:Math.round((best+st)*100)/100,reps:cl(topEasy?hi-2:lo),live:false,why:"bateu o topo da faixa na última sessão: subir a carga"}; }
+ const add=pv.rir!=null&&pv.rir>=tR+1?(pv.rir>=4?2:1):(withR.length?0:1);
+ return {kg:pv.kg,reps:cl(pv.reps+add),live:false,why:add?"última sessão: tentar mais repetições":"repetir a última sessão"};
 }
 function refreshSuggest(si){ const A=load().active; if(!A) return; const o=slots(A)[si], card=app.querySelector(`.ex[data-slot="${si}"]`); if(!card) return;
  card.querySelectorAll(".st[data-k]:not(.wu)").forEach(row=>{ const k=row.dataset.k, j=+k.split("#")[1]; if(A.sets[k]) return; const sg=suggest(o,j); if(!sg) return;
@@ -587,19 +620,21 @@ function recordSet(o,key,kg,reps){ const A=load().active; const prevBest=bestFor
 function nativeSync(){ if(!NW) return; const S=load(), A=S.active; if(!A) return;
  const pg=progressOf(A), total=pg.total, done=pg.done, p=curPointer(A);
  const resting=R.classList.contains("show")&&rEnd>Date.now();
- if(!p){ NW.update({title:`Treino ${A.key} • ${done}/${total} séries`,finished:true,exercise:"",setLabel:"",kg:0,reps:0,restEnd:resting?rEnd:0,sound:!!S.restSound}).catch(()=>{}); return; }
- const sg=suggest(p.o,p.j), last=lastFor(p.o.ex.n), pv=last&&(last.sets[p.j]||last.sets[0]);
- const kg=sg?sg.kg:(pv?pv.kg:0), reps=sg?sg.reps:(pv?pv.reps:(topReps(p.o.ex.r)||10));
+ if(!p){ NW.update({title:`Treino ${A.key} • ${done}/${total} séries`,finished:true,exercise:"",setLabel:"",kg:0,reps:0,restEnd:resting?rEnd:0,sound:!!S.restSound,rirKey:""}).catch(()=>{}); return; }
+ const fv=fvals(p.o,p.j), kg=fv.kg, reps=fv.reps;
  const nx=p.SL.find(o=>o.i>p.o.i&&setsFor(o.ex)>0);
- NW.update({title:`Treino ${A.key} • ${done}/${total} séries`,exercise:p.o.ex.n,setLabel:`Série ${p.j+1} de ${p.n}`,kg,reps,kgStep:kgStep(p.o.ex.n),restSec:restSecOf(p.o.ex.d),restEnd:resting?rEnd:0,next:p.j===p.n-1&&nx?nx.ex.n:"",key:p.o.i+"#"+p.j,finished:false,sound:!!S.restSound,alarm:!!S.alarmSound}).catch(()=>{});
+ const lk=A.lastKey, ls=lk&&A.sets[lk], lo=ls&&slots(A)[+lk.split("#")[0]], askR=!!(S.askRir&&ls&&lo&&!timedOf(lo.ex.r));
+ NW.update({title:`Treino ${A.key} • ${done}/${total} séries`,exercise:p.o.ex.n,setLabel:`Série ${p.j+1} de ${p.n}`,kg,reps,kgStep:kgStep(p.o.ex.n),restSec:restSecOf(p.o.ex.d),restEnd:resting?rEnd:0,next:p.j===p.n-1&&nx?nx.ex.n:"",key:p.o.i+"#"+p.j,finished:false,sound:!!S.restSound,alarm:!!S.alarmSound,rirKey:askR?lk:"",rir:askR&&ls.rir!=null?ls.rir:-1,rirLabel:askR?`RIR de ${lo.ex.n.split(" ").slice(0,2).join(" ")} ${fmtKg(ls.kg)}×${ls.reps}`:""}).catch(()=>{});
 }
 function nativeStop(){ if(NW) NW.stop().catch(()=>{}); }
 if(NW){ NW.addListener("action",d=>{ const S=load(), A=S.active; if(!A) return;
  if(d.type==="done"){ if(A.sets[d.key]) return nativeSync(); const si=+String(d.key).split("#")[0], o=slots(A)[si]; if(!o) return; const kg=+d.kg||0, reps=+d.reps||0;
   const prevBest=bestFor(o.ex.n), cur=e1rm(kg,reps), sessBest=Math.max(0,...Object.values(A.sets).filter(x=>x.ex===o.ex.n&&!x.w).map(x=>e1rm(x.kg,x.reps)));
-  const pr=kg>0&&prevBest>0&&cur>prevBest&&cur>sessBest; A.sets[d.key]={ex:o.ex.n,kg,reps,t:Date.now(),pr}; A.lastKey=d.key; A.cur=advanceFrom(A,o); save();
+  const pr=kg>0&&prevBest>0&&cur>prevBest&&cur>sessBest; A.sets[d.key]={ex:o.ex.n,kg,reps,t:Date.now(),pr}; A.lastKey=d.key; A.cur=advanceFrom(A,o); delete FV[d.key]; save();
   if(+d.restEnd>Date.now()) restUntil(+d.restEnd,restSecOf(o.ex.d),true); if(tab==="home") rerenderKeep(); nativeSync(); }
  else if(d.type==="rest"){ if(+d.restEnd>Date.now()) restUntil(+d.restEnd,null,true); else stopRest(true); }
+ else if(d.type==="rir"){ const st=A.sets[d.key]; if(st){ st.rir=+d.v; A.pendRir=false; save(); Object.keys(FV).forEach(k=>delete FV[k]); haptic(10); if(tab==="home") rerenderKeep(); } nativeSync(); }
+ else if(d.type==="vals"){ const f=FV[d.key]||{}; f.kg=+d.kg; f.reps=+d.reps; f.live=false; FV[d.key]=f; const kI=document.getElementById("fkg"), rI=document.getElementById("frp"); if(kI&&document.getElementById("fdone")&&document.getElementById("fdone").dataset.key===d.key){ kI.value=f.kg; rI.value=f.reps; } }
 }); }
 
 /* ---------- treino express ---------- */
@@ -830,10 +865,63 @@ function render(){ renderTabs(); const s=load(); document.body.classList.toggle(
 const QUOTES=["Constância vence intensidade. Aparecer hoje já é metade do treino.", "Ninguém vê os treinos de terça-feira chuvosa, mas o espelho vê o resultado.", "Uma série bem feita vale mais que três feitas com pressa.", "Sua coluna agradece cada abdômen travado. Técnica primeiro, carga depois.", "O corpo que você quer está sendo construído agora, uma repetição por vez.", "Disciplina é lembrar o que você quer mais do que o que você quer agora.", "Não precisa ser perfeito. Precisa ser hoje.", "Quem treina cansado e com técnica ganha mais do que quem espera estar disposto.", "40 minutos. É só isso que o dia de hoje pede de você.", "Progresso pequeno ainda é progresso. 2,5 kg a mais também conta.", "A dor da disciplina pesa gramas. A do arrependimento pesa toneladas.", "Você já voltou de uma cirurgia. Uma série difícil não vai te parar.", "O treino de hoje é o aquecimento do atleta que você vai ser em fevereiro.", "Motivação te faz começar. Hábito te faz continuar.", "Corra no sábado, levante na semana, descanse sem culpa no domingo.", "Respeite o descanso entre as séries. Ele também é treino.", "Cada treino registrado é uma prova de que você cumpriu a palavra consigo.", "Força não é só o que você levanta, é o que você não desiste de levantar.", "Dias ruins de treino ainda valem mais que dias sem treino.", "Sua única competição é o Adriano da semana passada.", "Foco no movimento, não no relógio. O resultado vem no tempo dele.", "Recuperação também é estratégia. Dormir bem é parte do plano.", "O peso não sabe se você está cansado. A técnica sabe. Cuide dela.", "Um passo de cada vez, uma série de cada vez, uma semana de cada vez.", "Quem cuida da base nunca precisa recomeçar do zero.", "Treinar é investimento. O retorno vem com juros compostos.", "Hoje é um ótimo dia para bater um recorde, nem que seja de constância.", "Abdômen firme, coluna neutra, mente no músculo. Bora.", "Não negocie com a preguiça. Só calce o tênis e comece o aquecimento.", "O difícil de hoje vira o aquecimento de amanhã.", "Grandes resultados são só pequenos esforços repetidos todos os dias.", "Seu futuro agradece o treino que seu presente não queria fazer.", "A fila não espera, mas também não cobra. Faça o próximo da lista.", "Força para a corrida, corrida para o coração, treino para a vida toda.", "O segredo não é treinar muito em um dia. É não falhar muitos dias.", "Mais uma repetição com boa forma. É ali que o músculo cresce.", "Você não precisa de vontade. Precisa de um plano. E o plano está aqui.", "Cada gota de suor hoje é uma dor lombar a menos amanhã.", "O corpo se adapta ao que você faz com frequência. Faça o certo com frequência.", "Comece leve, termine forte. E volte amanhã.", "Resultado é a soma de dias comuns bem feitos.", "Treine como quem está construindo algo que vai durar. Porque está.", "Ninguém fica forte pensando em treinar. Só treinando.", "O melhor treino é aquele que você realmente faz.", "Segunda-feira ou não, todo dia é dia de seguir a fila.", "Seja paciente com o processo e implacável com a constância."];
 function quoteOfDay(){ const d=new Date(), start=new Date(d.getFullYear(),0,0), doy=Math.floor((d-start)/864e5); return QUOTES[(doy+d.getFullYear()*7)%QUOTES.length]; }
 
+/* ---------- ver treino sem iniciar ---------- */
+function previewWorkout(ph,k){ const s=load(), next=s.next;
+ const swap={}; Object.entries(s.swaps).forEach(([key,v])=>{ const [p,kk,i]=key.split("|"); if(+p===ph&&kk===k) swap[+i]=v; });
+ const SL=slots({phase:ph,key:k,swap}), W=workout(ph,k), nMain=W.main.length;
+ const row=o=>{ const e=o.ex, last=lastFor(e.n), n=setsFor(e); return `<button class="opt" data-pi="${o.i}">${thumb(e)}<div style="min-width:0;flex:1"><b>${esc(e.n)}</b>
+   <div class="small mut">${n} × ${esc(e.r)}${e.d!=="—"?" • "+esc(e.d):" • bi-set"}${o.swapped?" • substituto":""}</div>
+   <div class="small" style="color:${last?"var(--info)":"var(--dim)"}">${last?"Última: "+last.sets.slice(0,4).map(x=>(x.kg>0?fmtKg(x.kg)+"×":"")+x.reps).join(" · "):"Ainda não feito"}</div></div><span style="color:var(--mut)">${ic("eye",18)}</span></button>`; };
+ openSheet(`<div class="seg" style="grid-template-columns:repeat(5,1fr);margin-top:0">${KEYS.map(x=>`<button data-pk="${x}" class="${x===k?"on":""}" style="font-family:var(--disp);font-size:18px;font-weight:800">${x}</button>`).join("")}</div>
+  <div class="eyebrow" style="margin-top:14px">Fase ${ph}${k===next?" • próximo da fila":""}</div><h2 style="margin-top:4px">Treino ${k}</h2><p class="small mut" style="margin:4px 0 0">${esc(W.sub)} • ${SL.reduce((a,o)=>a+setsFor(o.ex),0)} séries • ~${planMinutes(ph,k)} min</p>
+  <div class="secttl" style="margin-top:16px"><i></i>Musculação</div>${SL.slice(0,nMain).map(row).join("")}
+  <div class="secttl core"><i></i>Core e lombar</div>${SL.slice(nMain).map(row).join("")}
+  <div class="gap" style="height:14px"></div><button class="cta" id="pvs" style="margin-top:0">${ic("play",18,0).replace('fill="none"','fill="#fff"')} Começar treino ${k}</button>`);
+ sheet.scrollTop=0;
+ sheet.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>previewWorkout(ph,b.dataset.pk));
+ sheet.querySelectorAll("[data-pi]").forEach(b=>b.onclick=()=>{ const o=SL[+b.dataset.pi]; showInfo(o.ex); const back=document.createElement("button"); back.className="btn2"; back.style.marginTop="8px"; back.innerHTML=ic("back",18)+" Voltar ao treino "+k; back.onclick=()=>previewWorkout(ph,k); sheet.appendChild(back); });
+ document.getElementById("pvs").onclick=()=>{ closeSheet(); if(k!==s.next){ s.next=k; save(); } startWorkout(k); };
+}
+
+/* ---------- agenda de corridas ---------- */
+const RUN_NAME={tiro:"Tiro / intervalado",long:"Longão"};
+function addDays(iso,n){ const d=parseISO(iso); d.setDate(d.getDate()+n); return localISO(d); }
+function plannedRuns(fromISO,toISO){ const s=load(), mv=s.runMoves||{}, skip=new Set(s.skipRuns||[]), out=[];
+ for(let iso=addDays(fromISO,-7); iso<=addDays(toISO,7); iso=addDays(iso,1)){ const wd=parseISO(iso).getDay(); if(!RUN[wd]) continue;
+  const target=Object.prototype.hasOwnProperty.call(mv,iso)?mv[iso]:iso; if(target>=fromISO&&target<=toISO) out.push({iso:target,base:iso,type:wd===2?"tiro":"long",moved:target!==iso,skipped:skip.has(iso)}); }
+ (s.runExtra||[]).forEach(x=>{ if(x.iso>=fromISO&&x.iso<=toISO) out.push({iso:x.iso,base:null,id:x.id,type:x.type,extra:true,skipped:false}); });
+ return out.sort((a,b)=>a.iso.localeCompare(b.iso)); }
+function runsPlannedOn(iso){ return plannedRuns(iso,iso); }
+function daySheet(iso){ const s=load(), d=parseISO(iso), today=todayISO(), past=iso<=today;
+ const wk=s.sessions.filter(x=>localISO(x.date)===iso), real=runsOn(iso), plan=realRuns()?[]:runsPlannedOn(iso);
+ const mon=monday(d), week=[...Array(7)].map((_,i)=>localISO(new Date(mon.getTime()+i*864e5)));
+ openSheet(`<div class="eyebrow">${iso===today?"Hoje":iso===addDays(today,1)?"Amanhã":iso===addDays(today,-1)?"Ontem":""}</div><h2 style="margin-top:4px">${fmtDay(iso)}</h2>
+  ${wk.map(x=>`<div class="dayrun"><div class="ri" style="background:#2a1610;color:var(--acc)"><b class="disp" style="font-size:20px">${x.key}</b></div><div><b>Treino ${x.key}</b><div class="small mut">${x.min} min • ${x.sets.length} séries</div></div></div>`).join("")}
+  ${real.map(r=>`<div class="dayrun"><div class="ri">${ic("next",20)}</div><div><b>${esc(r.name||"Corrida")}</b><div class="small mut">${fmtKg(r.km)} km • ${r.min} min${r.hr?" • FC "+Math.round(r.hr):""} • ${RUN_SRC[r.src]||""}</div></div></div>`).join("")}
+  ${plan.map((r,ix)=>`<div class="dayrun" style="flex-wrap:wrap"><div class="ri">${ic("next",20)}</div><div style="flex:1;min-width:0"><b style="${r.skipped?"text-decoration:line-through":""}">${RUN_NAME[r.type]}</b><div class="small mut">${r.extra?"Corrida extra":r.moved?"Movida de "+fmtDay(r.base):"Planejada no Runna"}${r.skipped?" • não feita":past?" • conta no mapa de recuperação":""}</div></div>
+    <div style="display:flex;gap:6px;width:100%;margin-top:10px">${r.extra?`<button class="btn2" data-rx="${r.id}" style="flex:1;padding:10px">Remover</button>`:`<button class="btn2" data-rs="${r.base}" style="flex:1;padding:10px">${r.skipped?"Marcar como feita":"Não fiz"}</button><button class="btn2" data-rm="${ix}" style="flex:1;padding:10px">Mover dia</button>`}</div>
+    <div class="daypick hidden" id="dp${ix}">${week.map(w=>{ const wd=parseISO(w); return `<button data-to="${w}" data-from="${r.base}" class="${w===r.iso?"cur":""} ${w===today?"today":""}">${DOW[wd.getDay()]}<b>${wd.getDate()}</b></button>`; }).join("")}</div>
+    ${r.moved?`<button class="alt" data-rb="${r.base}" style="width:100%">Voltar para ${fmtDay(r.base)}</button>`:""}</div>`).join("")}
+  ${!wk.length&&!real.length&&!plan.length?`<p class="mut" style="margin:12px 0 0">Nada registrado neste dia.</p>`:""}
+  <div class="gap" style="height:14px"></div>
+  ${!realRuns()?`<div class="sech"><h3>Adicionar corrida neste dia</h3></div><div style="display:flex;gap:8px"><button class="btn2" data-ra="tiro">+ Tiro</button><button class="btn2" data-ra="long">+ Longão</button></div><div class="gap"></div>`:""}
+  ${past&&s.runSource!=="plan"?`<button class="btn2" id="dreg">${ic("plus",16)} Registrar corrida com distância</button><div class="gap"></div>`:""}
+  <button class="cta" onclick="closeSheet()" style="margin-top:4px">Fechar</button>`);
+ const done=msg=>{ save(); closeSheet(); render(); toast(msg); };
+ sheet.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>{ const k=b.dataset.rs, sk=s.skipRuns||(s.skipRuns=[]), i=sk.indexOf(k); i<0?sk.push(k):sk.splice(i,1); done(i<0?"Corrida marcada como não feita":"Corrida marcada como feita"); });
+ sheet.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>document.getElementById("dp"+b.dataset.rm).classList.toggle("hidden"));
+ sheet.querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{ const mv=s.runMoves||(s.runMoves={}); if(b.dataset.to===b.dataset.from) delete mv[b.dataset.from]; else mv[b.dataset.from]=b.dataset.to; done("Corrida movida para "+fmtDay(b.dataset.to)); });
+ sheet.querySelectorAll("[data-rb]").forEach(b=>b.onclick=()=>{ delete (s.runMoves||{})[b.dataset.rb]; done("Corrida voltou para o dia original"); });
+ sheet.querySelectorAll("[data-ra]").forEach(b=>b.onclick=()=>{ (s.runExtra||(s.runExtra=[])).push({id:Date.now(),iso,type:b.dataset.ra}); done(RUN_NAME[b.dataset.ra]+" adicionado"); });
+ sheet.querySelectorAll("[data-rx]").forEach(b=>b.onclick=()=>{ s.runExtra=(s.runExtra||[]).filter(x=>String(x.id)!==b.dataset.rx); done("Corrida removida"); });
+ const dr=document.getElementById("dreg"); if(dr) dr.onclick=()=>runSheet(iso);
+}
+
 /* ---------- home ---------- */
-function runWarning(k){ const d=new Date().getDay(); if(!["C","D"].includes(k)) return null;
- if(d===5) return "Amanhã é o longão. Perna pesada hoje atrapalha a corrida. Faça um treino de superiores e deixe o "+k+" para segunda.";
- if(d===1) return "Amanhã tem tiro. Perna pesada hoje compromete o intervalado. Faça um treino de superiores (A ou E) hoje.";
+function runWarning(k){ if(!["C","D"].includes(k)||realRuns()) return null; const t=todayISO();
+ const today=runsPlannedOn(t).find(r=>!r.skipped), tom=runsPlannedOn(addDays(t,1)).find(r=>!r.skipped);
+ if(today) return `Hoje tem ${today.type==="long"?"longão":"tiro"}. Perna pesada no mesmo dia compromete a corrida e a recuperação. Faça um treino de superiores (A, B ou E) e deixe o ${k} para depois.`;
+ if(tom) return `Amanhã tem ${tom.type==="long"?"longão":"tiro"}. Perna pesada hoje atrapalha a corrida. Faça um treino de superiores e deixe o ${k} para depois da corrida.`;
  return null; }
 function streakWeeks(){ const ss=load().sessions; let n=0; let w=monday(new Date()); const cnt=d=>ss.filter(x=>{ const t=parseISO(localISO(x.date)); return t>=d && t<new Date(d.getTime()+7*864e5); }).length;
  if(cnt(w)<3) w=new Date(w.getTime()-7*864e5); while(cnt(w)>=3){ n++; w=new Date(w.getTime()-7*864e5); } return n; }
@@ -850,13 +938,15 @@ function vHome(){
  const doneKeys=new Set(weekSess.map(x=>x.key));
  app.innerHTML=`<div class="wrap">
  <div class="top"><div class="hello"><div><div class="eyebrow">${greet}, Adriano</div><h1>Hoje</h1></div><button class="lvl" id="lvl" style="--p:${levelInfo().pct}" aria-label="Nível e conquistas"><span>${levelInfo().L}</span></button></div><p class="quote">${esc(quoteOfDay())}</p></div>
- <div class="week">${days.map(x=>`<div class="day ${x.iso===today?"today":""} ${x.done?"done":""}"><div class="d">${DOW[x.d.getDay()]}</div><div class="n">${x.d.getDate()}</div><div class="m ${!x.done&&RUN[x.d.getDay()]?"run":""}" ${!realRuns()&&RUN[x.d.getDay()]&&x.d<=new Date()?`data-run="${x.iso}"`:""} style="${(load().skipRuns||[]).includes(x.iso)?"text-decoration:line-through;opacity:.5":""}">${(()=>{ const rr=runsOn(x.iso), km=rr.reduce((a,r)=>a+r.km,0); if(x.done) return x.done.join("")+(km?`<span style="color:var(--info)">·</span>`:""); if(km) return `<span style="color:var(--info)">${fmtKg(km)}k</span>`; return !realRuns()&&RUN[x.d.getDay()]?(x.d.getDay()===2?"TIRO":"LONG"):""; })()}</div></div>`).join("")}</div>
+ <div class="week">${days.map(x=>`<div class="day ${x.iso===today?"today":""} ${x.done?"done":""}"><div class="d">${DOW[x.d.getDay()]}</div><div class="n">${x.d.getDate()}</div>${(()=>{ const rr=runsOn(x.iso), km=rr.reduce((a,r)=>a+r.km,0), pl=realRuns()?[]:runsPlannedOn(x.iso), sk=pl.length&&pl.every(r=>r.skipped);
+  const lbl=x.done?x.done.join("")+((km||pl.some(r=>!r.skipped))?`<span style="color:var(--info)">·</span>`:""):km?`<span style="color:var(--info)">${fmtKg(km)}k</span>`:pl.length?(pl[0].type==="tiro"?"TIRO":"LONG"):"";
+  return `<div class="m ${!x.done&&(pl.length||km)?"run":""}" style="${sk&&!x.done?"text-decoration:line-through;opacity:.5":""}">${lbl}</div>`; })()}</div>`).join("")}</div>
  <div class="hero">
   <div class="eyebrow" style="color:#ffb59c">Próximo da fila • Fase ${ph}</div>
   <div style="display:flex;align-items:flex-end;gap:14px;margin-top:8px"><div class="big disp">${next}</div><div class="ttl">${esc(W.sub.replace(/ • /g," · "))}</div></div>
   <div class="chips"><span class="chip">${nsets} séries</span><span class="chip">~${planMinutes(ph,next)} min</span><span class="chip">${W.main.length+W.core.length} exercícios</span>${isDeload()?`<span class="chip ok">Semana leve</span>`:""}</div>
   <button class="cta" id="go">${ic("play",18,0).replace('fill="none"','fill="#fff"')} Começar treino</button>
-  <div style="display:flex;gap:6px"><button class="alt" id="pick">Trocar o treino</button><button class="alt" id="expr">${ic("clock",14)} Treino express</button></div>
+  <div style="display:flex;gap:6px"><button class="alt" id="prev">${ic("eye",14)} Ver treino</button><button class="alt" id="pick">${ic("swap",14)} Trocar</button><button class="alt" id="expr">${ic("clock",14)} Express</button></div>
  </div>
  ${warn?`<div class="tip">${ic("warn",18)}<div>${warn}</div></div>`:""}
  ${(()=>{ const r=nextWorkoutRecoveryWarn(ph,next); return r&&!warn?`<div class="tip">${ic("warn",18)}<div>Músculos principais do treino ${next} ainda em recuperação: ${r}. Se puder, faça outro treino da fila hoje ou reduza uma série.</div></div>`:""; })()}
@@ -877,10 +967,9 @@ function vHome(){
  </div></div>
  </div>`;
  bindRecovery(); const ih=document.getElementById("impH"); if(ih) ih.onchange=e=>importBackupFile(e.target.files[0]);
- document.getElementById("lvl").onclick=levelSheet; document.getElementById("expr").onclick=()=>expressSheet(ph,next);
+ document.getElementById("lvl").onclick=levelSheet; document.getElementById("prev").onclick=()=>previewWorkout(ph,next); document.getElementById("expr").onclick=()=>expressSheet(ph,next);
  const cyb=document.getElementById("cyc"); if(cyb) cyb.onclick=cycleSheet; const rpb=document.getElementById("rep"); if(rpb) rpb.onclick=()=>{ reportSheet(1); };
- if(s.runSource==="manual") app.querySelectorAll(".week .day").forEach((el,i)=>{ const iso=days[i].iso; if(parseISO(iso)<=new Date()) el.onclick=()=>runSheet(iso); });
- app.querySelectorAll("[data-run]").forEach(el=>el.parentElement.onclick=()=>{ const iso=el.dataset.run, sk=s.skipRuns||(s.skipRuns=[]), i=sk.indexOf(iso); i<0?sk.push(iso):sk.splice(i,1); save(); vHome(); toast(i<0?"Corrida marcada como não feita":"Corrida marcada como feita"); });
+ app.querySelectorAll(".week .day").forEach((el,i)=>{ el.setAttribute("role","button"); el.onclick=()=>daySheet(days[i].iso); });
  document.getElementById("go").onclick=()=>startWorkout(next);
  document.getElementById("pick").onclick=()=>openSheet(`<h2>Treino de hoje</h2><p class="mut small" style="margin:6px 0 4px">Fase ${ph}. A fila segue a partir do treino que você fizer.</p>${KEYS.map(k=>`<button class="opt ${k===next?"cur":""}" data-k="${k}"><div class="hcard k" style="width:46px;height:46px;padding:0;margin:0;background:var(--s3)"><span class="disp" style="font-weight:800;font-size:24px;color:var(--acc)">${k}</span></div><div><b>${esc(workout(ph,k).sub)}</b><div class="small mut">${workout(ph,k).main.length+workout(ph,k).core.length} exercícios</div></div></button>`).join("")}`)
   ||sheet.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ s.next=b.dataset.k; save(); closeSheet(); render(); });
@@ -1147,9 +1236,9 @@ function vFocus(){
  let main="";
  if(resting) main=restView(A,p); else if(!p) main=allDoneView(A); else if(p.warm) main=warmView(A); else main=setView(A,p);
  const cur=p&&!p.warm?p.o.i:null;
- const strip=`<div class="sq ${A.cur==="warm"?"cur":""} ${A.warm.length>=PLAN.warmup.length?"done":""}" data-sq="warm" role="button" tabindex="0"><div class="im none">${ic("dumb",18)}</div><div class="lb">Aquec.</div>${A.warm.length>=PLAN.warmup.length?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`+
+ const strip=`<div class="sq ${A.cur==="warm"?"cur":""} ${A.warm.length>=PLAN.warmup.length?"done":""}" data-sq="warm" role="button" tabindex="0"><div class="im none">${ic("dumb",18)}</div><div class="nm">Aquecimento de coluna</div><div class="lb">${A.warm.length}/${PLAN.warmup.length}</div>${A.warm.length>=PLAN.warmup.length?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`+
   SL.map(o=>{ const n=setsFor(o.ex), dn=[...Array(n)].filter((_,j)=>A.sets[o.i+"#"+j]).length, sk=[...Array(n)].filter((_,j)=>(A.skip||{})[o.i+"#"+j]).length, all=dn+sk>=n;
-   return `<div class="sq ${o.i===cur&&A.cur!=="warm"?"cur":""} ${all&&dn?"done":""} ${all&&!dn?"skip":""} ${o.ex.d==="—"?"bi":""}" data-sq="${o.i}" role="button" tabindex="0" aria-label="${esc(o.ex.n)}">${o.ex.img?`<div class="im" data-img="${o.ex.img}" style="background-image:url(img/${o.ex.img}/0.jpg)"></div>`:`<div class="im none">${ic("web",16)}</div>`}<div class="lb">${dn}/${n}</div>${all&&dn?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`; }).join("");
+   return `<div class="sq ${o.i===cur&&A.cur!=="warm"?"cur":""} ${all&&dn?"done":""} ${all&&!dn?"skip":""} ${o.ex.d==="—"?"bi":""}" data-sq="${o.i}" role="button" tabindex="0" aria-label="${esc(o.ex.n)}">${o.ex.img?`<div class="im" data-img="${o.ex.img}" style="background-image:url(img/${o.ex.img}/0.jpg)"></div>`:`<div class="im none">${ic("web",16)}</div>`}<div class="nm">${esc(o.ex.n)}</div><div class="lb">${dn}/${n}</div>${all&&dn?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`; }).join("");
  app.innerHTML=`<div class="fx">
   <div class="fxh"><button class="ibtn" id="fmenu" aria-label="Opções do treino">${ic("dots",20)}</button>
    <div class="t"><b>Treino ${A.key}${A.express?` <span class="tag bi" style="vertical-align:3px">Express</span>`:""}</b><span><span id="clock">0:00</span> • ${pg.done}/${pg.total} séries</span></div>
@@ -1159,6 +1248,41 @@ function vFocus(){
  tickClock(); drawRing(); bindFocus(A,p);
  const c=document.querySelector(".sq.cur"); if(c) c.scrollIntoView({inline:"center",block:"nearest"});
  if(TM&&document.getElementById("tv")) timedTick();
+}
+function setChips(A,o,curJ){ const n=setsFor(o.ex), tm=timedOf(o.ex.r);
+ return `<div class="setchips">${[...Array(n)].map((_,j)=>{ const k=o.i+"#"+j, d=A.sets[k], sk=(A.skip||{})[k];
+  if(d) return `<button class="sc d" data-ed="${k}"><small>SÉRIE ${j+1} ✓</small><b>${tm?d.reps+" s":(d.kg>0?fmtKg(d.kg)+"×":"")+(tm?"":d.reps)}</b><i>${d.rir!=null?"RIR "+(d.rir===4?"4+":d.rir):"editar"}</i></button>`;
+  if(sk) return `<button class="sc x" data-ed="${k}"><small>SÉRIE ${j+1}</small><b>pulada</b><i>retomar</i></button>`;
+  const v=fvals(o,j); return `<button class="sc ${j===curJ?"c":"p"}" data-gj="${k}"><small>SÉRIE ${j+1}</small><b>${tm?esc(o.ex.r.replace(/\/lado/," /l")):(v.kg>0?fmtKg(v.kg)+"×":"")+v.reps}</b><i></i></button>`; }).join("")}</div>`; }
+function editSetSheet(key){ const s=load(), A=s.active, si=+key.split("#")[0], o=slots(A)[si]; if(!o) return; const j=+key.split("#")[1], tm=timedOf(o.ex.r);
+ if((A.skip||{})[key]&&!A.sets[key]){ delete A.skip[key]; A.cur=o.i; save(); closeSheet(); vFocus(); nativeSync(); toast("Série retomada"); return; }
+ const d=A.sets[key]; if(!d) return; let kg=d.kg, reps=d.reps, rir=d.rir;
+ openSheet(`<div class="eyebrow">Editar série ${j+1}</div><h2 style="margin-top:4px;font-size:22px">${esc(o.ex.n)}</h2>
+  <div class="steppers" style="margin-top:14px">${tm?"":`<div class="stp" style="background:var(--s2)"><label>KG</label><div class="rw"><button data-e="kg-1">−</button><input id="ekg" type="number" inputmode="decimal" step="0.5" value="${kg}"><button data-e="kg+1">+</button></div></div>`}
+   <div class="stp" style="background:var(--s2);${tm?"grid-column:1/-1":""}"><label>${tm?"SEGUNDOS":"REPS"}</label><div class="rw"><button data-e="rp-1">−</button><input id="erp" type="number" inputmode="numeric" value="${reps}"><button data-e="rp+1">+</button></div></div></div>
+  ${tm?"":`<div class="rirq" style="margin-top:10px;background:var(--s2)"><div class="rq">Repetições na reserva</div><div class="c">${[0,1,2,3,4].map(v=>`<button data-er="${v}" class="${rir===v?"on":""}" style="background:var(--s3)">${v===4?"4+":v}</button>`).join("")}</div></div>`}
+  <div class="gap"></div><button class="cta" id="esv" style="margin-top:4px">Salvar</button><div class="gap"></div>
+  <button class="btn2 danger" id="eun">${ic("undo",18)} Desfazer: marcar como não feita</button>`);
+ const kI=document.getElementById("ekg"), rI=document.getElementById("erp");
+ sheet.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{ const f=b.dataset.e.slice(0,2), dl=+b.dataset.e.slice(2); if(f==="kg"){ kg=Math.max(0,Math.round(((parseFloat(kI.value)||0)+dl*kgStep(o.ex.n))*100)/100); kI.value=kg; } else { reps=Math.max(0,(parseInt(rI.value)||0)+dl); rI.value=reps; } });
+ sheet.querySelectorAll("[data-er]").forEach(b=>b.onclick=()=>{ rir=+b.dataset.er; sheet.querySelectorAll("[data-er]").forEach(x=>x.classList.toggle("on",x===b)); });
+ document.getElementById("esv").onclick=()=>{ d.kg=kI?parseFloat(String(kI.value).replace(",","."))||0:0; d.reps=parseInt(rI.value)||0; if(rir!=null) d.rir=rir;
+  d.pr=false; const pb=bestFor(o.ex.n), others=Object.entries(A.sets).filter(([k,x])=>k!==key&&x.ex===o.ex.n&&!x.w).map(([k,x])=>e1rm(x.kg,x.reps)); d.pr=d.kg>0&&pb>0&&e1rm(d.kg,d.reps)>pb&&e1rm(d.kg,d.reps)>Math.max(0,...others);
+  Object.keys(FV).forEach(k=>delete FV[k]); save(); closeSheet(); vFocus(); nativeSync(); toast("Série atualizada"); };
+ document.getElementById("eun").onclick=()=>{ delete A.sets[key]; if(A.lastKey===key) A.lastKey=null; A.cur=o.i; Object.keys(FV).forEach(k=>delete FV[k]); save(); closeSheet(); vFocus(); nativeSync(); toast("Série desfeita"); };
+}
+function exPreviewSheet(o){ const s=load(), A=s.active, n=setsFor(o.ex), rem=remJ(A,o), cur=fPtr(A), isCur=cur&&!cur.warm&&cur.o.i===o.i;
+ const sk=[...Array(n)].map((_,j)=>o.i+"#"+j).filter(k=>(A.skip||{})[k]&&!A.sets[k]);
+ openSheet(`${o.ex.img?`<div class="bigimg" data-img="${o.ex.img}" style="background-image:url(img/${o.ex.img}/0.jpg)"></div>`:""}
+  <h2 style="font-size:22px">${esc(o.ex.n)}</h2><div class="chips"><span class="chip">${n} × ${esc(o.ex.r)}</span>${o.ex.d!=="—"?`<span class="chip">descanso ${esc(o.ex.d)}</span>`:`<span class="chip warn">bi-set</span>`}<span class="chip ${rem.length?"":"ok"}">${n-rem.length-sk.length}/${n} feitas</span></div>
+  <div style="margin-top:12px">${setChips(A,o,isCur?cur.j:-1)}</div>
+  <div class="gap"></div>${rem.length&&!isCur?`<button class="cta" id="pvgo" style="margin-top:4px">Fazer agora</button><div class="gap"></div>`:""}
+  ${sk.length?`<button class="btn2" id="pvsk">Retomar séries puladas</button><div class="gap"></div>`:""}
+  <button class="btn2" id="pvhow">${ic("eye",18)} Como fazer</button>`);
+ const g=document.getElementById("pvgo"); if(g) g.onclick=()=>{ A.cur=o.i; save(); closeSheet(); stopTimed(); if(R.classList.contains("show")) stopRest(); vFocus(); nativeSync(); };
+ const k=document.getElementById("pvsk"); if(k) k.onclick=()=>{ sk.forEach(x=>delete A.skip[x]); A.cur=o.i; save(); closeSheet(); vFocus(); nativeSync(); };
+ document.getElementById("pvhow").onclick=()=>showInfo(o.ex);
+ sheet.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editSetSheet(b.dataset.ed));
 }
 function setView(A,p){ const o=p.o, e=o.ex, key=o.i+"#"+p.j, v=fvals(o,p.j), S=load(), last=lastFor(e.n), tm=timedOf(e.r), myNote=S.notes[e.n];
  const top=topReps(e.r), up=last&&top&&last.sets.length>=o.base.s&&last.sets.every(x=>x.reps>=top&&x.kg>0);
@@ -1172,12 +1296,13 @@ function setView(A,p){ const o=p.o, e=o.ex, key=o.i+"#"+p.j, v=fvals(o,p.j), S=l
  else ctrl=`<div class="steppers">
    <div class="stp"><label for="fkg">KG</label><div class="rw"><button data-st="kg-1" aria-label="Diminuir carga">−</button><input id="fkg" type="number" inputmode="decimal" step="0.5" value="${v.kg}" class="${v.live?"sg":""}"><button data-st="kg+1" aria-label="Aumentar carga">+</button></div></div>
    <div class="stp"><label for="frp">${units}</label><div class="rw"><button data-st="rp-1" aria-label="Diminuir">−</button><input id="frp" type="number" inputmode="numeric" value="${v.reps}" class="${v.live?"sg":""}"><button data-st="rp+1" aria-label="Aumentar">+</button></div></div></div>
-  <div class="prevline">${last?`Última vez: ${last.sets.map(x=>fmtKg(x.kg)+"×"+x.reps).join(" · ")}`:"Primeira vez neste exercício: ajuste a carga que usar"}${v.live?' • <span style="color:#9cc6ff">ajustado pelo RIR</span>':""}</div>
-  <button class="bigdone" id="fdone">${ic("check",22,2.8)} Concluir série ${p.j+1}</button>`;
+  <div class="prevline">${last?`Última vez: ${last.sets.map(x=>fmtKg(x.kg)+"×"+x.reps).join(" · ")}`:"Primeira vez neste exercício: ajuste a carga que usar"}</div>${(()=>{ const sg=suggest(o,p.j); return sg&&sg.why&&!v.edited?`<div class="prevline whyl">Sugestão: ${esc(sg.why)}</div>`:""; })()}
+  <button class="bigdone" id="fdone" data-key="${key}">${ic("check",22,2.8)} Concluir série ${p.j+1}</button>`;
  return `<button class="media ${e.img?"":"none"}" data-fview="1" ${e.img?`data-img="${e.img}" style="background-image:url(img/${e.img}/0.jpg)"`:""} aria-label="Ver execução">${e.img?"":ic("web",34,1.4)}
    <div class="mt">${partner?`<span class="tag bi">Bi-set com ${esc(partner.ex.n.split(" ").slice(0,2).join(" "))}</span>`:""}${o.swapped?`<span class="tag sw">Substituto</span>`:""}${up?`<span class="tag up">↑ Subir carga</span>`:""}${o.core?`<span class="tag core">Core</span>`:""}</div>
    <span class="hint">${ic("eye",12)} execução</span></button>
-  <div class="fname"><h2>${esc(e.n)}</h2><div class="meta"><span>Série ${p.j+1} de ${p.n} • ${esc(e.r)}${e.d!=="—"?" • "+esc(e.d):""}</span><span class="sdots">${dots}</span></div></div>
+  <div class="fname"><h2>${esc(e.n)}</h2><div class="meta"><span>Série ${p.j+1} de ${p.n} • ${esc(e.r)}${e.d!=="—"?" • descanso "+esc(e.d):""}</span></div></div>
+  ${setChips(A,o,p.j)}
   ${pend?rirBlock(A):""}
   ${myNote?`<div class="mynote2">${esc(myNote)}</div>`:(e.note?`<div class="prevline" style="text-align:left">${esc(e.note)}</div>`:"")}
   ${ctrl}
@@ -1185,11 +1310,12 @@ function setView(A,p){ const o=p.o, e=o.ex, key=o.i+"#"+p.j, v=fvals(o,p.j), S=l
 }
 function rirBlock(A){ const cur=A.sets[A.lastKey]; return `<div class="rirq"><div class="rq">Como foi a última série (${esc(cur.ex.split(" ").slice(0,3).join(" "))} ${fmtKg(cur.kg)}×${cur.reps})? Repetições na reserva</div><div class="c">${[0,1,2,3,4].map(v=>`<button data-rir="${v}" class="${cur.rir===v?"on":""}">${v===4?"4+":v}</button>`).join("")}</div></div>`; }
 function restView(A,p){ const S=load(); let nx="";
- if(p&&!p.warm){ const v=fvals(p.o,p.j), tm=timedOf(p.o.ex.r); nx=`<div class="nextc">${thumb(p.o.ex)}<div style="min-width:0"><span>A seguir • série ${p.j+1} de ${p.n}</span><b>${esc(p.o.ex.n)}</b><span>${tm?esc(p.o.ex.r):`${fmtKg(v.kg)} kg × ${v.reps}`}</span></div></div>`; }
+ if(p&&!p.warm){ const v=fvals(p.o,p.j), tm=timedOf(p.o.ex.r); nx=`<button class="nextc" data-pv="${p.o.i}">${thumb(p.o.ex)}<div style="min-width:0"><span>A seguir • série ${p.j+1} de ${p.n}</span><b>${esc(p.o.ex.n)}</b><span>${tm?esc(p.o.ex.r):`${fmtKg(v.kg)} kg × ${v.reps}`}</span></div><span class="eye">${ic("eye",18)}</span></button>`; }
+ const lk=A.lastKey, lo=lk&&slots(A)[+lk.split("#")[0]], lastBlk=lo?`<div class="lastex"><div class="t"><span>${esc(lo.ex.n)}</span><button data-pv="${lo.i}" style="color:var(--info);font-weight:800;font-size:11px">${ic("eye",13)} execução</button></div>${setChips(A,lo,-1)}</div>`:"";
  const askR=S.askRir&&A.lastKey&&A.sets[A.lastKey]&&!timedOf((slots(A)[+A.lastKey.split("#")[0]]||{ex:{r:""}}).ex.r);
  return `<div class="restv"><div class="tm-lbl">Descanso</div><div class="bring"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" stroke="var(--s3)" stroke-width="10" fill="none"/><circle id="rc" cx="110" cy="110" r="100" stroke="var(--acc)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="628" stroke-dashoffset="0"/></svg><div class="v" id="rv">0:00</div></div>
   <div class="radj"><button class="btn2" id="fr1">−15 s</button><button class="btn2" id="fr2">+15 s</button><button class="btn2" id="fr3">Pular</button></div>
-  ${askR?rirBlock(A):""}${nx}</div>`; }
+  ${askR?rirBlock(A):""}${lastBlk}${nx}</div>`; }
 function warmView(A){ return `<div class="fname"><h2>Aquecimento de coluna</h2><div class="meta"><span>4 min • toque em cada um ao terminar</span></div></div>
   <div class="warmg">${PLAN.warmup.map((e,i)=>`<button class="wc ${A.warm.includes(i)?"done":""}" data-w="${i}">${thumb(e)}<b>${esc(e.n)}</b><span>${esc(e.r)}</span></button>`).join("")}</div>
   <button class="bigdone" id="wgo" style="background:var(--acc);color:#fff">${A.warm.length>=PLAN.warmup.length?"Começar musculação":"Pular e começar"} ▶</button>`; }
@@ -1209,13 +1335,10 @@ function bindFocus(A,p){ const S=load();
   document.getElementById("m1").onclick=()=>{ closeSheet(); finishWorkout(); }; document.getElementById("m3").onclick=()=>{ A.view="list"; save(); closeSheet(); render(); };
   document.getElementById("m4").onclick=speedSheet; document.getElementById("m2").onclick=()=>ask("Descartar treino?","As séries marcadas neste treino serão perdidas.","Descartar",()=>{ S.active=null; save(); stopRest(); stopTimed(); wake(false); nativeStop(); render(); },true); };
  document.getElementById("eta").onclick=speedSheet;
- app.querySelectorAll("[data-sq]").forEach(b=>b.onclick=()=>{ const v=b.dataset.sq; if(v==="warm"){ A.cur="warm"; save(); vFocus(); return; }
-  const o=slots(A)[+v]; if(remJ(A,o).length){ A.cur=o.i; save(); stopTimed(); vFocus(); nativeSync(); return; }
-  const sk=[...Array(setsFor(o.ex))].map((_,j)=>o.i+"#"+j).filter(k=>(A.skip||{})[k]);
-  openSheet(`<h2 style="font-size:22px">${esc(o.ex.n)}</h2><p class="small mut" style="margin:6px 0 10px">${sk.length?`${sk.length} série${sk.length>1?"s":""} pulada${sk.length>1?"s":""}.`:"Todas as séries feitas."}</p>
-   ${sk.length?`<button class="cta" id="unsk" style="margin-top:0">Retomar séries puladas</button><div class="gap"></div>`:""}<button class="btn2" id="vex">${ic("eye",18)} Ver execução</button>`);
-  const u=document.getElementById("unsk"); if(u) u.onclick=()=>{ sk.forEach(k=>delete A.skip[k]); A.cur=o.i; save(); closeSheet(); vFocus(); nativeSync(); };
-  document.getElementById("vex").onclick=()=>showInfo(o.ex); });
+ app.querySelectorAll("[data-sq]").forEach(b=>b.onclick=()=>{ const v=b.dataset.sq; if(v==="warm"){ A.cur="warm"; save(); if(R.classList.contains("show")) stopRest(); vFocus(); return; } exPreviewSheet(slots(A)[+v]); });
+ app.querySelectorAll("[data-pv]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const o=slots(A)[+b.dataset.pv]; if(o) showInfo(o.ex); });
+ app.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editSetSheet(b.dataset.ed));
+ app.querySelectorAll("[data-gj]").forEach(b=>b.onclick=()=>{ const o=slots(A)[+b.dataset.gj.split("#")[0]]; if(o) showInfo(o.ex); });
  const wgo=document.getElementById("wgo"); if(wgo) wgo.onclick=()=>{ const n=nextAfter(A,-1); A.cur=n?n.i:null; save(); vFocus(); nativeSync(); };
  app.querySelectorAll(".warmg .wc").forEach(b=>b.onclick=()=>{ const i=+b.dataset.w, j=A.warm.indexOf(i); j<0?A.warm.push(i):A.warm.splice(j,1); save(); haptic(15);
   if(A.warm.length>=PLAN.warmup.length){ const n=nextAfter(A,-1); A.cur=n?n.i:null; save(); toast("Aquecimento feito. Bora!"); } vFocus(); });
@@ -1225,8 +1348,8 @@ function bindFocus(A,p){ const S=load();
   b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); if(!document.querySelector(".restv")||document.getElementById("fdone")) vFocus(); nativeSync(); });
  if(!p||p.warm) return; const o=p.o, key=o.i+"#"+p.j, v=fvals(o,p.j);
  const fv=document.querySelector("[data-fview]"); if(fv) fv.onclick=()=>showInfo(o.ex);
- app.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{ const [f,dl]=[b.dataset.st.slice(0,2),+b.dataset.st.slice(2)]; if(f==="kg"){ v.kg=Math.max(0,Math.round((v.kg+dl*kgStep(o.ex.n))*100)/100); document.getElementById("fkg").value=v.kg; } else { v.reps=Math.max(0,v.reps+dl); document.getElementById("frp").value=v.reps; } v.live=false; haptic(8); });
- const kgI=document.getElementById("fkg"), rpI=document.getElementById("frp"); if(kgI) kgI.oninput=()=>{ v.kg=parseFloat(kgI.value)||0; }; if(rpI) rpI.oninput=()=>{ v.reps=parseInt(rpI.value)||0; };
+ app.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{ const [f,dl]=[b.dataset.st.slice(0,2),+b.dataset.st.slice(2)]; if(f==="kg"){ v.kg=Math.max(0,Math.round((v.kg+dl*kgStep(o.ex.n))*100)/100); document.getElementById("fkg").value=v.kg; } else { v.reps=Math.max(0,v.reps+dl); document.getElementById("frp").value=v.reps; } v.live=false; v.edited=true; haptic(8); nativeSync(); });
+ const kgI=document.getElementById("fkg"), rpI=document.getElementById("frp"); if(kgI) kgI.oninput=()=>{ v.kg=parseFloat(kgI.value)||0; v.edited=true; }; if(rpI) rpI.oninput=()=>{ v.reps=parseInt(rpI.value)||0; v.edited=true; };
  const fd=document.getElementById("fdone"); if(fd) fd.onclick=()=>focusDone(key);
  if(document.getElementById("tact")) renderTimedActions();
  app.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{ const t=b.dataset.ft;
@@ -1325,7 +1448,7 @@ function calendarHTML(){
  let cells=["S","T","Q","Q","S","S","D"].map(d=>`<div class="h">${d}</div>`).join("")+Array(first).fill('<div class="c o"></div>').join("");
  let cnt=0;
  for(let d=1;d<=days;d++){ const dt=new Date(y,mo,d), iso=localISO(dt), w=by[iso], run=RUN[dt.getDay()]; if(w) cnt+=w.length;
-  const rk=runsOn(iso).reduce((a,r)=>a+r.km,0), showRun=realRuns()?rk>0:(run&&!w);
+  const rk=runsOn(iso).reduce((a,r)=>a+r.km,0), showRun=realRuns()?rk>0:runsPlannedOn(iso).some(r=>!r.skipped);
   cells+=`<div class="c ${w?"w":""} ${iso===today?"t":""}">${w?`<b>${w.join("")}</b>`:d}${showRun?`<span class="r" ${realRuns()?'style="width:6px;height:6px"':""}></span>`:""}</div>`; }
  return `<div class="panel"><div class="calnav"><button class="ibtn" id="cp" aria-label="Mês anterior">${ic("back",18)}</button><b>${MES[mo]} ${y} <span class="mut small" style="font-weight:600;text-transform:none">• ${cnt} treino${cnt===1?"":"s"}</span></b><button class="ibtn" id="cn" aria-label="Próximo mês" ${calOff>=0?"disabled style=\"opacity:.3\"":""}>${ic("next",18)}</button></div>
   <div class="cal">${cells}</div><div class="legend"><span><i style="background:var(--acc)"></i>Treino (letra)</span><span><i style="background:var(--info);border-radius:50%"></i>Dia de corrida</span></div></div>`;
@@ -1451,7 +1574,7 @@ function vCfg(){
   ${CAP?`<button class="btn2" id="abk">Fazer backup automático agora</button><div class="gap"></div>`:""}
   <button class="btn2" id="exp">Exportar backup</button><div class="gap"></div><button class="btn2" id="csv">Exportar planilha (CSV)</button><div class="gap"></div><label class="btn2" style="cursor:pointer">Importar backup<input type="file" accept=".json,application/json" id="imp" class="hidden"></label></div></div>
  <div class="sec"><div class="panel"><button class="btn2 danger" id="rst">Reiniciar as 12 semanas</button><p class="small mut" style="margin:8px 0 0;text-align:center">Volta para a semana 1 a partir de hoje. O histórico é mantido.</p></div></div>
- <p class="small mut" style="text-align:center;margin:22px 0">Meu Treino 2.4 • Imagens: free-exercise-db (domínio público)</p></div>`;
+ <p class="small mut" style="text-align:center;margin:22px 0">Meu Treino 2.5 • Imagens: free-exercise-db (domínio público)</p></div>`;
  const sw=Object.entries(s.swaps); document.getElementById("swl").innerHTML=sw.length?sw.map(([k,v])=>{ const [p,kk,i]=k.split("|"); const base=[...workout(p,kk).main,...workout(p,kk).core][+i]; return `<div class="lrow"><div style="min-width:0"><b>${esc(v)}</b><div class="small mut">no lugar de ${esc(base.n)} • Fase ${p}, treino ${kk}</div></div><button class="ibtn" data-rm="${esc(k)}" aria-label="Remover">${ic("undo",16)}</button></div>`; }).join(""):`<p class="small mut" style="margin:0">Nenhuma. Ao trocar um exercício, escolha "Sempre neste treino" para fixar a troca.</p>`;
  app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ delete s.swaps[b.dataset.rm]; save(); vCfg(); toast("Substituição removida"); });
  document.getElementById("start").onchange=e=>{ s.start=e.target.value||todayISO(); save(); toast("Data de início salva"); };
