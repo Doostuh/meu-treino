@@ -236,6 +236,16 @@ nav.tabs .live::after{content:"";position:absolute;top:6px;left:calc(50% + 9px);
 .formgrid label{font-size:12px;font-weight:700;color:var(--mut)}
 .formgrid input{margin-top:5px}
 textarea.field{min-height:110px;resize:vertical;font:inherit}
+/* ---------- aparelho ocupado ---------- */
+.busybtn{flex:0 0 auto;display:flex;align-items:center;gap:4px;background:#2a2110;color:var(--warn);font-weight:800;font-size:12px;padding:8px 10px;border-radius:10px}
+.busyq{display:flex;align-items:center;gap:8px;background:#2a2110;color:#f7d68a;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:600;flex:0 0 auto}
+.busyq button{background:#3a2e14;color:#ffe2a3;font-weight:800;padding:7px 10px;border-radius:9px;font-size:12.5px}
+.busynext{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.busynext button{background:var(--s2);border-radius:12px;overflow:hidden;text-align:left;padding:0 0 8px}
+.busynext .im{height:58px;background:#fff center/cover no-repeat}
+.busynext .im.none{background:var(--s3);display:grid;place-items:center;color:var(--dim)}
+.busynext b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.2;padding:6px 7px 0;height:35px}
+.busynext span{display:block;font-size:10.5px;color:var(--mut);padding:2px 7px 0}
 /* ---------- como fazer ---------- */
 .how{margin:12px 0 14px}
 .how h4{margin:16px 0 6px;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.09em;text-transform:uppercase}
@@ -606,7 +616,11 @@ function refreshSuggest(si){ const A=load().active; if(!A) return; const o=slots
 const NW=CAP&&CAP.Plugins&&CAP.Plugins.WorkoutNotif?CAP.Plugins.WorkoutNotif:null;
 function remJ(A,o){ const n=setsFor(o.ex), sk=A.skip||{}, out=[]; for(let j=0;j<n;j++){ const k=o.i+"#"+j; if(!A.sets[k]&&!sk[k]) out.push(j); } return out; }
 function liveSlots(A){ return slots(A).filter(o=>setsFor(o.ex)>0); }
-function nextAfter(A,i){ const L=liveSlots(A).filter(o=>remJ(A,o).length); if(!L.length) return null; return L.find(o=>o.i>i)||L[0]; }
+function orderOf(A){ const live=liveSlots(A).map(o=>o.i); if(!A.order) return live; const o=A.order.filter(i=>live.includes(i)); live.forEach(i=>{ if(!o.includes(i)) o.push(i); }); return o; }
+function orderedSlots(A){ const SL=slots(A); return orderOf(A).map(i=>SL[i]); }
+function nextAfter(A,i){ const L=orderedSlots(A).filter(o=>remJ(A,o).length); if(!L.length) return null; const ord=orderOf(A), pos=ord.indexOf(i);
+ if(pos<0) return L.find(o=>o.i>i)||L[0]; return L.find(o=>ord.indexOf(o.i)>pos)||L[0]; }
+function groupOf(A,i){ const SL=slots(A), o=SL[i]; if(!o) return [i]; if(o.ex.d==="—"&&SL[i+1]&&SL[i+1].core===o.core) return [i,i+1]; if(SL[i-1]&&SL[i-1].ex.d==="—"&&SL[i-1].core===o.core) return [i-1,i]; return [i]; }
 function advanceFrom(A,o){ const SL=slots(A), nx=SL[o.i+1], pv=SL[o.i-1];
  if(o.ex.d==="—"&&nx&&nx.core===o.core&&setsFor(nx.ex)>0&&remJ(A,nx).length) return nx.i;
  if(pv&&pv.ex.d==="—"&&pv.core===o.core&&remJ(A,pv).length) return pv.i;
@@ -1237,8 +1251,8 @@ function vFocus(){
  if(resting) main=restView(A,p); else if(!p) main=allDoneView(A); else if(p.warm) main=warmView(A); else main=setView(A,p);
  const cur=p&&!p.warm?p.o.i:null;
  const strip=`<div class="sq ${A.cur==="warm"?"cur":""} ${A.warm.length>=PLAN.warmup.length?"done":""}" data-sq="warm" role="button" tabindex="0"><div class="im none">${ic("dumb",18)}</div><div class="nm">Aquecimento de coluna</div><div class="lb">${A.warm.length}/${PLAN.warmup.length}</div>${A.warm.length>=PLAN.warmup.length?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`+
-  SL.map(o=>{ const n=setsFor(o.ex), dn=[...Array(n)].filter((_,j)=>A.sets[o.i+"#"+j]).length, sk=[...Array(n)].filter((_,j)=>(A.skip||{})[o.i+"#"+j]).length, all=dn+sk>=n;
-   return `<div class="sq ${o.i===cur&&A.cur!=="warm"?"cur":""} ${all&&dn?"done":""} ${all&&!dn?"skip":""} ${o.ex.d==="—"?"bi":""}" data-sq="${o.i}" role="button" tabindex="0" aria-label="${esc(o.ex.n)}">${o.ex.img?`<div class="im" data-img="${o.ex.img}" style="background-image:url(img/${o.ex.img}/0.jpg)"></div>`:`<div class="im none">${ic("web",16)}</div>`}<div class="nm">${esc(o.ex.n)}</div><div class="lb">${dn}/${n}</div>${all&&dn?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`; }).join("");
+  orderedSlots(A).map(o=>{ const n=setsFor(o.ex), dn=[...Array(n)].filter((_,j)=>A.sets[o.i+"#"+j]).length, sk=[...Array(n)].filter((_,j)=>(A.skip||{})[o.i+"#"+j]).length, all=dn+sk>=n;
+   return `<div class="sq ${o.i===cur&&A.cur!=="warm"?"cur":""} ${all&&dn?"done":""} ${all&&!dn?"skip":""} ${o.ex.d==="—"?"bi":""}" data-sq="${o.i}" role="button" tabindex="0" aria-label="${esc(o.ex.n)}">${o.ex.img?`<div class="im" data-img="${o.ex.img}" style="background-image:url(img/${o.ex.img}/0.jpg)"></div>`:`<div class="im none">${ic("web",16)}</div>`}<div class="nm">${esc(o.ex.n)}</div><div class="lb">${(A.busy||{})[o.i]&&!all?'<span style="color:var(--warn)">ocupado</span>':dn+"/"+n}</div>${all&&dn?`<span class="ck">${ic("check",11,3)}</span>`:""}</div>`; }).join("");
  app.innerHTML=`<div class="fx">
   <div class="fxh"><button class="ibtn" id="fmenu" aria-label="Opções do treino">${ic("dots",20)}</button>
    <div class="t"><b>Treino ${A.key}${A.express?` <span class="tag bi" style="vertical-align:3px">Express</span>`:""}</b><span><span id="clock">0:00</span> • ${pg.done}/${pg.total} séries</span></div>
@@ -1302,15 +1316,18 @@ function setView(A,p){ const o=p.o, e=o.ex, key=o.i+"#"+p.j, v=fvals(o,p.j), S=l
    <div class="mt">${partner?`<span class="tag bi">Bi-set com ${esc(partner.ex.n.split(" ").slice(0,2).join(" "))}</span>`:""}${o.swapped?`<span class="tag sw">Substituto</span>`:""}${up?`<span class="tag up">↑ Subir carga</span>`:""}${o.core?`<span class="tag core">Core</span>`:""}</div>
    <span class="hint">${ic("eye",12)} execução</span></button>
   <div class="fname"><h2>${esc(e.n)}</h2><div class="meta"><span>Série ${p.j+1} de ${p.n} • ${esc(e.r)}${e.d!=="—"?" • descanso "+esc(e.d):""}</span></div></div>
+  ${(A.busy||{})[o.i]?`<div class="busyq">${ic("warn",16)}<div style="flex:1">O aparelho estava ocupado. Liberou?</div><button data-bq="free">Sim</button><button data-bq="still">Ainda não</button></div>`:""}
   ${setChips(A,o,p.j)}
   ${pend?rirBlock(A):""}
   ${myNote?`<div class="mynote2">${esc(myNote)}</div>`:(e.note?`<div class="prevline" style="text-align:left">${esc(e.note)}</div>`:"")}
   ${ctrl}
-  <div class="tools"><button data-ft="swap">${ic("swap",18)}Trocar</button>${usesPlates(e.n)?`<button data-ft="plate">${ic("dumb",18)}Anilhas</button>`:""}<button data-ft="note">${ic("info",18)}Nota</button><button data-ft="skip">${ic("next",18)}Pular</button><button data-ft="list">${ic("clock",18)}Lista</button></div>`;
+  <div class="tools"><button data-ft="swap">${ic("swap",18)}Trocar</button>${usesPlates(e.n)?`<button data-ft="plate">${ic("dumb",18)}Anilhas</button>`:""}<button data-ft="note">${ic("info",18)}Nota</button><button data-ft="busy">${ic("warn",18)}Ocupado</button><button data-ft="skip">${ic("next",18)}Pular</button></div>`;
 }
 function rirBlock(A){ const cur=A.sets[A.lastKey]; return `<div class="rirq"><div class="rq">Como foi a última série (${esc(cur.ex.split(" ").slice(0,3).join(" "))} ${fmtKg(cur.kg)}×${cur.reps})? Repetições na reserva</div><div class="c">${[0,1,2,3,4].map(v=>`<button data-rir="${v}" class="${cur.rir===v?"on":""}">${v===4?"4+":v}</button>`).join("")}</div></div>`; }
 function restView(A,p){ const S=load(); let nx="";
- if(p&&!p.warm){ const v=fvals(p.o,p.j), tm=timedOf(p.o.ex.r); nx=`<button class="nextc" data-pv="${p.o.i}">${thumb(p.o.ex)}<div style="min-width:0"><span>A seguir • série ${p.j+1} de ${p.n}</span><b>${esc(p.o.ex.n)}</b><span>${tm?esc(p.o.ex.r):`${fmtKg(v.kg)} kg × ${v.reps}`}</span></div><span class="eye">${ic("eye",18)}</span></button>`; }
+ if(p&&!p.warm){ const v=fvals(p.o,p.j), tm=timedOf(p.o.ex.r), same=A.lastKey&&+A.lastKey.split("#")[0]===p.o.i;
+  nx=`<div class="nextc" data-pv="${p.o.i}" role="button" tabindex="0">${thumb(p.o.ex)}<div style="min-width:0;flex:1"><span>A seguir • série ${p.j+1} de ${p.n}</span><b>${esc(p.o.ex.n)}</b><span>${tm?esc(p.o.ex.r):`${fmtKg(v.kg)} kg × ${v.reps}`}</span></div>
+   ${same?`<span class="eye">${ic("eye",18)}</span>`:`<button class="busybtn" data-busy="${p.o.i}">${ic("warn",14)} Ocupado</button>`}</div>`; }
  const lk=A.lastKey, lo=lk&&slots(A)[+lk.split("#")[0]], lastBlk=lo?`<div class="lastex"><div class="t"><span>${esc(lo.ex.n)}</span><button data-pv="${lo.i}" style="color:var(--info);font-weight:800;font-size:11px">${ic("eye",13)} execução</button></div>${setChips(A,lo,-1)}</div>`:"";
  const askR=S.askRir&&A.lastKey&&A.sets[A.lastKey]&&!timedOf((slots(A)[+A.lastKey.split("#")[0]]||{ex:{r:""}}).ex.r);
  return `<div class="restv"><div class="tm-lbl">Descanso</div><div class="bring"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" stroke="var(--s3)" stroke-width="10" fill="none"/><circle id="rc" cx="110" cy="110" r="100" stroke="var(--acc)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="628" stroke-dashoffset="0"/></svg><div class="v" id="rv">0:00</div></div>
@@ -1325,7 +1342,7 @@ function focusDone(key,repsOverride){ const s=load(), A=s.active, si=+key.split(
  const v=FV[key]||fvals(o,+key.split("#")[1]); const kgEl=document.getElementById("fkg"), rpEl=document.getElementById("frp");
  const kg=kgEl?parseFloat(String(kgEl.value).replace(",","."))||0:(v.kg||0), reps=repsOverride!=null?repsOverride:(rpEl?parseInt(rpEl.value)||0:v.reps);
  if(!reps&&repsOverride==null){ toast("Informe as repetições"); return; }
- const pr=recordSet(o,key,kg,reps); A.lastKey=key; A.pendRir=o.ex.d==="—"; A.cur=advanceFrom(A,o); save(); delete FV[key];
+ if(A.busy) delete A.busy[si]; const pr=recordSet(o,key,kg,reps); A.lastKey=key; A.pendRir=o.ex.d==="—"; A.cur=advanceFrom(A,o); save(); delete FV[key];
  if(pr){ toast(ic("trophy",16)+" Novo recorde em "+esc(o.ex.n),"pr"); haptic([30,40,30]); } else haptic(25);
  const sec=o.ex.d==="—"?0:restSecOf(o.ex.d), pg=progressOf(A);
  if(sec&&pg.done<pg.total) startRest(sec); else { vFocus(); nativeSync(); } }
@@ -1337,6 +1354,7 @@ function bindFocus(A,p){ const S=load();
  document.getElementById("eta").onclick=speedSheet;
  app.querySelectorAll("[data-sq]").forEach(b=>b.onclick=()=>{ const v=b.dataset.sq; if(v==="warm"){ A.cur="warm"; save(); if(R.classList.contains("show")) stopRest(); vFocus(); return; } exPreviewSheet(slots(A)[+v]); });
  app.querySelectorAll("[data-pv]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const o=slots(A)[+b.dataset.pv]; if(o) showInfo(o.ex); });
+ app.querySelectorAll("[data-busy]").forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); busySheet(+b.dataset.busy); });
  app.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>editSetSheet(b.dataset.ed));
  app.querySelectorAll("[data-gj]").forEach(b=>b.onclick=()=>{ const o=slots(A)[+b.dataset.gj.split("#")[0]]; if(o) showInfo(o.ex); });
  const wgo=document.getElementById("wgo"); if(wgo) wgo.onclick=()=>{ const n=nextAfter(A,-1); A.cur=n?n.i:null; save(); vFocus(); nativeSync(); };
@@ -1353,14 +1371,44 @@ function bindFocus(A,p){ const S=load();
  const fd=document.getElementById("fdone"); if(fd) fd.onclick=()=>focusDone(key);
  if(document.getElementById("tact")) renderTimedActions();
  app.querySelectorAll("[data-ft]").forEach(b=>b.onclick=()=>{ const t=b.dataset.ft;
-  if(t==="swap") swapSheet(o.i); if(t==="plate") plateSheet(o.ex.n,v.kg); if(t==="note") noteSheet(o.ex.n); if(t==="list"){ A.view="list"; save(); render(); }
+  if(t==="swap") swapSheet(o.i); if(t==="plate") plateSheet(o.ex.n,v.kg); if(t==="note") noteSheet(o.ex.n); if(t==="list"){ A.view="list"; save(); render(); } if(t==="busy") busySheet(o.i);
   if(t==="skip"){ const later=nextAfter(A,o.i); openSheet(`<h2 style="font-size:22px">${esc(o.ex.n)}</h2><div class="gap"></div>
     <button class="menuitem" id="k1">${ic("next")} Pular esta série <span class="mut small" style="margin-left:auto">série ${p.j+1}</span></button>
     <button class="menuitem" id="k2">${ic("trash")} Pular o exercício inteiro <span class="mut small" style="margin-left:auto">${remJ(A,o).length} séries</span></button>
     ${later&&later.i!==o.i?`<button class="menuitem" id="k3">${ic("swap")} Fazer depois (aparelho ocupado) <span class="mut small" style="margin-left:auto">vai para ${esc(later.ex.n.split(" ").slice(0,2).join(" "))}</span></button>`:""}`);
    document.getElementById("k1").onclick=()=>{ A.skip=A.skip||{}; A.skip[key]=true; A.cur=advanceFrom(A,o); save(); closeSheet(); vFocus(); nativeSync(); toast("Série pulada"); };
    document.getElementById("k2").onclick=()=>{ A.skip=A.skip||{}; remJ(A,o).forEach(j=>A.skip[o.i+"#"+j]=true); const n=nextAfter(A,o.i); A.cur=n?n.i:null; save(); closeSheet(); vFocus(); nativeSync(); toast("Exercício pulado. Toque nele na faixa para retomar"); };
-   const k3=document.getElementById("k3"); if(k3) k3.onclick=()=>{ A.cur=later.i; save(); closeSheet(); vFocus(); nativeSync(); toast("Ele volta no fim da fila"); }; } });
+   const k3=document.getElementById("k3"); if(k3) k3.onclick=()=>busySheet(o.i); } });
+ app.querySelectorAll("[data-bq]").forEach(b=>b.onclick=()=>{ if(b.dataset.bq==="free"){ delete A.busy[o.i]; save(); vFocus(); toast("Bora!"); } else deferBusy(o.i,null,true); });
+}
+
+/* ---------- aparelho ocupado ---------- */
+function equipOf(n){ n=n.toLowerCase(); if(/smith/.test(n)) return "Smith"; if(/leg press/.test(n)) return "leg press"; if(/hack/.test(n)) return "hack";
+ if(/polia|cabo|pulley|crossover|corda|puxada|pulldown|face pull|remada baixa|pallof|pull-through/.test(n)) return "polia"; if(/halter|goblet|serrote|unilateral \(|afundo|búlgaro|arnold/.test(n)) return "halteres";
+ if(/barra fixa|paralela/.test(n)) return "barra fixa"; if(/barra|terra|agachamento livre|stiff|hip thrust/.test(n)) return "barra livre";
+ if(/máquina|cadeira|mesa|voador|articulad|banco romano|extensão lombar|panturrilha sentada|scott/.test(n)) return "máquina"; return "peso do corpo"; }
+function busyAlts(A,i){ const o=slots(A)[i], g=GROUP_OF[o.base.n], eq=equipOf(o.ex.n), busyN=new Set(Object.values(A.busyEx||{}));
+ const list=(SUBS[g]||[]).map(x=>x[0]).filter((n,ix,a)=>a.indexOf(n)===ix&&n!==o.ex.n&&!busyN.has(n));
+ return list.map(n=>({n,eq:equipOf(n),diff:equipOf(n)!==eq,last:lastFor(n)})).sort((a,b)=>(b.diff-a.diff)||((b.last?1:0)-(a.last?1:0))).slice(0,4); }
+function deferBusy(i,afterI,again){ const s=load(), A=s.active, grp=groupOf(A,i); A.busy=A.busy||{}; A.busyEx=A.busyEx||{}; grp.forEach(x=>{ A.busy[x]=Date.now(); A.busyEx[x]=slots(A)[x].ex.n; });
+ const ord=orderOf(A).filter(x=>!grp.includes(x)); let tgt=afterI;
+ if(tgt==null){ const rest=ord.filter(x=>remJ(A,slots(A)[x]).length&&!grp.includes(x)); const pos=ord.indexOf(grp[0]); const cand=rest.find(x=>orderOf(A).indexOf(x)>orderOf(A).indexOf(grp[grp.length-1]))||rest[0]; tgt=cand; }
+ if(tgt==null){ toast("É o último exercício que falta. Espere o aparelho ou troque por outro."); return; }
+ const tg=groupOf(A,tgt), at=ord.indexOf(tg[tg.length-1]); ord.splice(at+1,0,...grp); A.order=ord; A.cur=tg[0];
+ save(); closeSheet(); if(R.classList.contains("show")&&!again){} vFocus(); nativeSync();
+ toast(`${again?"Tudo bem. ":""}Agora: ${slots(A)[tg[0]].ex.n.split(" ").slice(0,3).join(" ")}. Depois o app pergunta se o aparelho liberou.`); }
+function busySheet(i){ const s=load(), A=s.active, o=slots(A)[i], grp=groupOf(A,i), alts=busyAlts(A,i);
+ const others=orderedSlots(A).filter(x=>!grp.includes(x.i)&&remJ(A,x).length);
+ openSheet(`<div class="eyebrow" style="color:var(--warn)">Aparelho ocupado</div><h2 style="margin-top:4px;font-size:22px">${esc(o.ex.n)}</h2>
+  ${grp.length>1?`<p class="small mut" style="margin:6px 0 0">Faz bi-set com ${esc(slots(A)[grp.find(x=>x!==i)].ex.n)}: os dois andam juntos na fila.</p>`:""}
+  <div class="sech" style="margin-top:16px"><h3>Trocar por um parecido</h3><span class="small mut">só hoje</span></div>
+  ${alts.length?alts.map(a=>`<button class="opt" data-alt="${esc(a.n)}">${thumb(EX[a.n])}<div style="min-width:0"><b>${esc(a.n)}</b><div class="small mut">${a.diff?`<span style="color:var(--ok)">outro equipamento: ${a.eq}</span>`:`mesmo tipo: ${a.eq}`}</div><div class="small" style="color:${a.last?"var(--info)":"var(--dim)"}">${a.last?"Última: "+a.last.sets.slice(0,3).map(x=>(x.kg>0?fmtKg(x.kg)+"×":"")+x.reps).join(" · "):"Nunca feito"}</div></div></button>`).join(""):`<p class="small mut">Sem alternativas cadastradas para este movimento.</p>`}
+  ${others.length?`<div class="sech" style="margin-top:16px"><h3>Fazer outro agora</h3><span class="small mut">e voltar a este depois</span></div>
+  <div class="busynext">${others.slice(0,6).map(x=>`<button data-now="${x.i}">${x.ex.img?`<div class="im" style="background-image:url(img/${x.ex.img}/0.jpg)"></div>`:`<div class="im none">${ic("web",16)}</div>`}<b>${esc(x.ex.n)}</b><span>${remJ(A,x).length} série${remJ(A,x).length>1?"s":""}${(A.busy||{})[x.i]?" • ocupado antes":""}</span></button>`).join("")}</div>
+  <p class="small mut" style="margin:10px 0 0">O ${esc(o.ex.n.split(" ").slice(0,3).join(" "))} entra logo depois do escolhido, e o app pergunta se liberou.</p>`:""}
+  <div class="gap"></div><button class="btn2" onclick="closeSheet()">Cancelar</button>`);
+ sheet.querySelectorAll("[data-alt]").forEach(b=>b.onclick=()=>{ A.busyEx=A.busyEx||{}; A.busyEx["x"+i]=o.ex.n; if(A.busy) delete A.busy[i]; const nm=b.dataset.alt; applySwap(i,nm===o.base.n?null:nm,false); A.cur=i; save(); closeSheet(); if(R.classList.contains("show")){} vFocus(); nativeSync(); toast("Trocado por "+esc(nm)+" (só hoje)"); });
+ sheet.querySelectorAll("[data-now]").forEach(b=>b.onclick=()=>deferBusy(i,+b.dataset.now));
 }
 
 /* ---------- como fazer ---------- */
