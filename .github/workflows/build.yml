@@ -66,6 +66,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         continue-on-error: true
         with: { name: watch-shots, path: shots }
+      - name: Publicar capturas no branch watch-shots
+        continue-on-error: true
+        run: |
+          sudo chown -R "$(id -u)" shots
+          cd shots && git init -q && git checkout -q -b watch-shots && git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "capturas ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" watch-shots
       - uses: actions/upload-artifact@v4
         with:
           name: MeuTreino-watch
