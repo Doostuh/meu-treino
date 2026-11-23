@@ -3,12 +3,15 @@ using Toybox.System as Sys;
 using Toybox.WatchUi as Ui;
 
 // Só entra na compilação de demonstração (demo.jungle): percorre as telas para gerar capturas.
+(:demo)
 var gDemo = null;
 
+(:demo)
 function demoHook() {
     gDemo = new DemoRunner();
 }
 
+(:demo)
 class DemoRunner {
     var t;
     var i = 0;
