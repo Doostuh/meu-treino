@@ -301,7 +301,7 @@ class MainView extends Ui.View {
             return;
         }
         text(dc, cx, y(56), Gfx.FONT_XTINY, "PRÓXIMO TREINO", C_MUT);
-        text(dc, cx, y(100), Gfx.FONT_NUMBER_HOT, md.nextKey, C_ACC);
+        text(dc, cx, y(102), Gfx.FONT_LARGE, "Treino " + md.nextKey, C_ACC);
         var lines = wrapText(dc, md.nextName, Gfx.FONT_TINY, W - 60, 2);
         for (var i = 0; i < lines.size(); i++) {
             text(dc, cx, y(146) + i * dc.getFontHeight(Gfx.FONT_TINY), Gfx.FONT_TINY, lines[i], C_TXT);
