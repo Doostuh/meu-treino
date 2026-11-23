@@ -59,6 +59,13 @@ jobs:
             monkeyc -f monkey.jungle -e -o /app/MeuTreino.iq -y /app/ci/garmin_dev_key.der -r -l 0
           '
           ls -la MeuTreino*
+      - name: Capturas no simulador (demonstração)
+        continue-on-error: true
+        timeout-minutes: 6
+        run: docker run --rm -v "$PWD":/app --entrypoint /bin/bash ghcr.io/matco/connectiq-tester:latest /app/ci/watch_sim.sh
+      - uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with: { name: watch-shots, path: shots }
       - uses: actions/upload-artifact@v4
         with:
           name: MeuTreino-watch
@@ -73,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with: { path: dist, merge-multiple: true }
+        with: { path: dist, pattern: "MeuTreino-*", merge-multiple: true }
       - run: ls -la dist
       - name: Publicar na página de Releases
         uses: softprops/action-gh-release@v2

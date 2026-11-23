@@ -664,7 +664,7 @@ function progressOf(A){ const SL=liveSlots(A), total=SL.reduce((a,o)=>a+setsFor(
 function curPointer(A){ let p=fPtr(A); if(p&&p.warm){ const nx=nextAfter(A,-1); p=nx?{o:nx,j:remJ(A,nx)[0],n:setsFor(nx.ex)}:null; } return p?Object.assign(p,{SL:slots(A)}):null; }
 function recordSet(o,key,kg,reps){ const A=load().active; const prevBest=bestFor(o.ex.n), cur=e1rm(kg,reps), sessBest=Math.max(0,...Object.values(A.sets).filter(x=>x.ex===o.ex.n&&!x.w).map(x=>e1rm(x.kg,x.reps)));
  const pr=kg>0&&prevBest>0&&cur>prevBest&&cur>sessBest; A.sets[key]={ex:o.ex.n,kg,reps,t:Date.now(),pr}; return pr; }
-function nativeSync(){ if(!NW) return; const S=load(), A=S.active; if(!A) return;
+function nativeSync(){ if(!NW) return; watchSync(); const S=load(), A=S.active; if(!A) return;
  const pg=progressOf(A), total=pg.total, done=pg.done, p=curPointer(A);
  const resting=R.classList.contains("show")&&rEnd>Date.now();
  if(!p){ NW.update({title:`Treino ${A.key} • ${done}/${total} séries`,finished:true,exercise:"",setLabel:"",kg:0,reps:0,restEnd:resting?rEnd:0,sound:!!S.restSound,rirKey:""}).catch(()=>{}); return; }
@@ -673,7 +673,64 @@ function nativeSync(){ if(!NW) return; const S=load(), A=S.active; if(!A) return
  const lk=A.lastKey, ls=lk&&A.sets[lk], lo=ls&&slots(A)[+lk.split("#")[0]], askR=!!(S.askRir&&ls&&lo&&!timedOf(lo.ex.r));
  NW.update({title:`Treino ${A.key} • ${done}/${total} séries`,exercise:p.o.ex.n,setLabel:`Série ${p.j+1} de ${p.n}`,kg,reps,kgStep:kgStep(p.o.ex.n),restSec:restSecOf(p.o.ex.d),restEnd:resting?rEnd:0,next:p.j===p.n-1&&nx?nx.ex.n:"",key:p.o.i+"#"+p.j,finished:false,sound:!!S.restSound,alarm:!!S.alarmSound,rirKey:askR?lk:"",rir:askR&&ls.rir!=null?ls.rir:-1,rirLabel:askR?`RIR de ${lo.ex.n.split(" ").slice(0,2).join(" ")} ${fmtKg(ls.kg)}×${ls.reps}`:""}).catch(()=>{});
 }
-function nativeStop(){ if(NW) NW.stop().catch(()=>{}); }
+function nativeStop(){ if(NW) NW.stop().catch(()=>{}); setTimeout(watchSync,300); }
+
+/* ---------- relógio Garmin (Connect IQ) ---------- */
+const HASW=!!(NW&&NW.watchSend); let WLAST="", WLASTT=0, WSTAT={last:0};
+function fvPeek(o,j){ const key=o.i+"#"+j; if(FV[key]) return FV[key]; const v=fvals(o,j); delete FV[key]; return v; }
+function watchQueue(A,max){ const C=JSON.parse(JSON.stringify(A)); C.sets=C.sets||{}; C.skip=C.skip||{};
+ if(C.cur==="warm"){ const n=nextAfter(C,-1); C.cur=n?n.i:null; }
+ const out=[]; for(let g=0;g<max;g++){ const p=fPtr(C); if(!p||p.warm) break; const o=p.o, j=p.j, key=o.i+"#"+j;
+  const fv=g===0?fvals(o,j):fvPeek(o,j), tm=timedOf(o.ex.r);
+  out.push([key,o.ex.n,j+1,p.n,Math.round((fv.kg||0)*100),fv.reps||0,o.ex.d==="—"?0:restSecOf(o.ex.d),tm?tm.sec:0,Math.round(kgStep(o.ex.n)*100),tm?tm.sides:1,tm?tm.holds:1]);
+  C.sets[key]={ex:o.ex.n,kg:fv.kg,reps:fv.reps,t:0}; C.cur=advanceFrom(C,o); if(C.cur==null) break; }
+ return out; }
+function watchMsg(){ const S=load(), A=S.active, m={t:"s"};
+ if(!A){ m.ac=0; m.nk=S.next; try{ m.nn=workout(phaseNum(),S.next).sub.replace(/ • /g," · "); }catch(e){ m.nn=""; }
+  if(S.lastFin&&Date.now()-S.lastFin.at<15*60000) m.fx=S.lastFin.x; return m; }
+ const pg=progressOf(A); m.ac=1; m.wk=A.key; m.st=A.cur==="warm"?"warm":"set"; m.wn=PROFILE.warm; m.dn=pg.done; m.to=pg.total;
+ m.el=Math.round((Date.now()-A.started)/1000); m.q=watchQueue(A,12);
+ const resting=R.classList.contains("show")&&rEnd>Date.now(); m.rl=resting?Math.max(1,Math.round((rEnd-Date.now())/1000)):0; m.rd=resting?rDur:0;
+ try{ const e=etaInfo(A); m.em=e.mins; m.eh=e.hh; }catch(e){}
+ m.ar=S.askRir?1:0; m.sp=PROFILE.spine?1:0;
+ const lk=A.lastKey, ls=lk&&A.sets[lk], lo=ls&&slots(A)[+lk.split("#")[0]];
+ if(S.askRir&&ls&&lo&&ls.rir==null&&!ls.w&&!timedOf(lo.ex.r)&&Date.now()-ls.t<5*60000){ m.rk=lk; m.rn=`${lo.ex.n.split(" ").slice(0,2).join(" ")} ${fmtKg(ls.kg)}x${ls.reps}`; }
+ if(ls&&ls.pr&&Date.now()-ls.t<60000) m.pr=ls.ex+"@"+lk;
+ return m; }
+function watchSync(force){ if(!HASW) return; let m; try{ m=watchMsg(); }catch(e){ return; } const sig=JSON.stringify(Object.assign({},m,{el:0,rl:Math.round((m.rl||0)/5),em:0}));
+ if(!force&&sig===WLAST&&Date.now()-WLASTT<20000) return; WLAST=sig; WLASTT=Date.now(); NW.watchSend({msg:m}).catch(()=>{}); }
+function watchAct(m){ const S=load(), A=S.active, t=m.t; WSTAT.last=Date.now();
+ if(t==="hi"){ watchSync(true); return; }
+ if(t==="start"){ if(!A){ startWorkout(S.next); toast("Treino "+S.next+" iniciado pelo relógio"); } else watchSync(true); return; }
+ if(!A){ watchSync(true); return; }
+ const redraw=()=>{ if(isFocus()) vFocus(); else if(tab==="home") rerenderKeep(); };
+ if(t==="warm"){ if(A.cur==="warm"){ const n=nextAfter(A,-1); A.cur=n?n.i:null; save(); redraw(); } nativeSync(); return; }
+ if(t==="done"){ const key=String(m.k); if(A.sets[key]){ watchSync(true); return; } const si=+key.split("#")[0], o=slots(A)[si]; if(!o){ watchSync(true); return; }
+  const kg=(+m.kg||0)/100, reps=+m.r||0; if(A.busy) delete A.busy[si]; if(A.skip) delete A.skip[key];
+  const pr=recordSet(o,key,kg,reps), st=A.sets[key]; st.src="w"; if(+m.hr) st.hr=+m.hr; if(+m.hx) st.hx=+m.hx;
+  A.lastKey=key; A.pendRir=o.ex.d==="—"; A.cur=advanceFrom(A,o); delete FV[key]; save(); stopTimed();
+  if(pr){ toast(ic("trophy",16)+" Novo recorde em "+esc(o.ex.n),"pr"); }
+  const rs=+m.rs||0, pg=progressOf(A); if(rs>0&&pg.done<pg.total) restUntil(Date.now()+rs*1000,restSecOf(o.ex.d)||rs,true); else if(R.classList.contains("show")) stopRest(true);
+  redraw(); nativeSync(); return; }
+ if(t==="rir"){ const st=A.sets[String(m.k)]; if(st){ st.rir=+m.v; A.pendRir=false; save(); Object.keys(FV).forEach(k=>delete FV[k]); redraw(); } nativeSync(); return; }
+ if(t==="rest"){ const rs=+m.rs||0; if(rs>0) restUntil(Date.now()+rs*1000,Math.max(rDur,rs),true); else stopRest(true); nativeSync(); return; }
+ if(t==="skip"){ const key=String(m.k), o=slots(A)[+key.split("#")[0]]; if(o&&!A.sets[key]){ A.skip=A.skip||{}; A.skip[key]=true; A.cur=advanceFrom(A,o); save(); redraw(); } nativeSync(); return; }
+ if(t==="skipx"){ const o=slots(A)[+String(m.k).split("#")[0]]; if(o){ A.skip=A.skip||{}; remJ(A,o).forEach(j=>A.skip[o.i+"#"+j]=true); const n=nextAfter(A,o.i); A.cur=n?n.i:null; save(); redraw(); } nativeSync(); return; }
+ if(t==="fin"){ finishWorkout({fromWatch:true,pain:m.p!=null&&+m.p>=0?+m.p:null,watch:{hr:+m.hr||0,hx:+m.hx||0,kc:+m.kc||0}}); return; }
+}
+if(HASW){ NW.addListener("watch",d=>{ if(!d) return; if(d.type==="watchStatus"){ WSTAT.s=d.s; const el=document.getElementById("wstat"); if(el) watchPanel(); return; }
+ let m=d.m; if(typeof m==="string"){ try{ m=JSON.parse(m); }catch(e){ return; } } if(m&&m.t) watchAct(m); });
+ document.addEventListener("visibilitychange",()=>{ if(!document.hidden) watchSync(true); }); setTimeout(()=>watchSync(true),1500); }
+async function watchPanel(){ const el=document.getElementById("wstat"); if(!el) return; let st=WSTAT.s||null; try{ st=await NW.watchStatus(); WSTAT.s=st; }catch(e){}
+ const S=load(), dev=st&&st.devices||[], con=dev.filter(d=>d.status==="CONNECTED");
+ const line=!st?"Verificando...":!st.ready?`Garmin Connect não respondeu${st.error?" ("+esc(st.error)+")":""}. Confira se o app Garmin Connect está instalado e com o relógio pareado.`:!dev.length?"Nenhum relógio encontrado no Garmin Connect.":dev.map(d=>`<b style="color:var(--txt)">${esc(d.name)}</b>: ${d.status==="CONNECTED"?'<span style="color:var(--ok)">conectado</span>':esc(d.status==="NOT_CONNECTED"?"desconectado":d.status)}`).join("<br>");
+ const rx=WSTAT.last||(st&&st.lastRecvAt)||0;
+ el.innerHTML=`<p class="small mut" style="margin:0 0 10px">${line}${rx?`<br>Última mensagem do relógio: ${new Date(rx).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`:""}</p>
+  <div class="switch" style="padding-top:0"><div><b style="font-weight:600">Abrir no relógio ao iniciar treino</b><div class="small mut">O relógio pergunta se quer abrir o Meu Treino</div></div><button class="tg ${S.watchAutoOpen!==false?"on":""}" id="wauto" aria-label="Abrir no relógio"></button></div>
+  <button class="btn2" id="wopen" ${con.length?"":"disabled"}>Abrir o app no relógio agora</button><div class="gap"></div><button class="btn2" id="wsync">Enviar treino para o relógio</button>`;
+ document.getElementById("wauto").onclick=()=>{ const s=load(); s.watchAutoOpen=s.watchAutoOpen===false; save(); watchPanel(); };
+ document.getElementById("wopen").onclick=()=>{ NW.watchOpen().catch(()=>{}); toast("Confirme no relógio"); };
+ document.getElementById("wsync").onclick=()=>{ watchSync(true); toast("Enviado"); setTimeout(watchPanel,2500); }; }
 if(NW){ NW.addListener("action",d=>{ const S=load(), A=S.active; if(!A) return;
  if(d.type==="done"){ if(A.sets[d.key]) return nativeSync(); const si=+String(d.key).split("#")[0], o=slots(A)[si]; if(!o) return; const kg=+d.kg||0, reps=+d.reps||0;
   const prevBest=bestFor(o.ex.n), cur=e1rm(kg,reps), sessBest=Math.max(0,...Object.values(A.sets).filter(x=>x.ex===o.ex.n&&!x.w).map(x=>e1rm(x.kg,x.reps)));
@@ -1032,7 +1089,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 function startWorkout(k,opt){ opt=opt||{}; const s=load(), ph=phaseNum(), swap={};
  Object.entries(s.swaps).forEach(([key,v])=>{ const [p,kk,i]=key.split("|"); if(+p===ph&&kk===k) swap[+i]=v; });
  s.active={v:2,key:k,phase:ph,started:Date.now(),warm:[],sets:{},swap,ovr:opt.ovr||null,express:opt.express||null,skip:{},cur:"warm",view:"focus"}; s.active.plannedMin=modelMinutes(s.active,true); save(); wake(true); render(); window.scrollTo(0,0);
- if(NW){ NW.requestPermission().catch(()=>{}); nativeSync(); } }
+ if(NW){ NW.requestPermission().catch(()=>{}); nativeSync(); if(HASW&&s.watchAutoOpen!==false) NW.watchOpen().catch(()=>{}); } }
 function vWorkout(){
  const s=load(), A=s.active, W=workout(A.phase,A.key), SL=slots(A);
  const total=SL.reduce((a,o)=>a+setsFor(o.ex),0), done=Object.values(A.sets).filter(x=>!x.w).length;
@@ -1461,23 +1518,26 @@ function howHTML(n,planNote){ const h=howFor(n); if(!h) return planNote?`<p styl
   ${h.c?`<div class="howspine">${ic("warn",16)}<div><b>Coluna</b>${esc(h.c)}</div></div>`:""}</div>`; }
 
 /* ---------- finish ---------- */
-function finishWorkout(){
+function finishWorkout(opts){ opts=opts&&opts.fromWatch?opts:{};
  const s=load(), A=s.active; if(!A) return;
- const go=()=>painSheet(pain=>{ const all=Object.values(A.sets).sort((a,b)=>a.t-b.t), sets=all.filter(v=>!v.w).map(v=>{ const o={ex:v.ex,kg:v.kg,reps:v.reps,pr:!!v.pr,t:Math.round((v.t-A.started)/1000)}; if(v.rir!=null) o.rir=v.rir; return o; });
+ const commit=pain=>{ const all=Object.values(A.sets).sort((a,b)=>a.t-b.t), sets=all.filter(v=>!v.w).map(v=>{ const o={ex:v.ex,kg:v.kg,reps:v.reps,pr:!!v.pr,t:Math.round((v.t-A.started)/1000)}; if(v.rir!=null) o.rir=v.rir; if(v.hr) o.hr=v.hr; return o; });
   const sess={id:Date.now(),date:new Date().toISOString(),key:A.key,phase:A.phase,min:Math.max(1,Math.round((Date.now()-A.started)/60000)),sets,warmSets:all.filter(v=>v.w).length,warm:A.warm.length,swaps:Object.values(A.swap)}; if(pain!=null) sess.pain=pain;
+  if(opts.watch){ if(opts.watch.hr) sess.hr=opts.watch.hr; if(opts.watch.hx) sess.hx=opts.watch.hx; if(opts.watch.kc) sess.kc=opts.watch.kc; }
   if(A.express) sess.express=A.express; if(A.plannedMin) sess.plannedMin=A.plannedMin; const nsk=Object.keys(A.skip||{}).length; if(nsk) sess.skipped=nsk;
   const lvBefore=levelInfo().L;
   s.sessions.push(sess); s.next=KEYS[(KEYS.indexOf(A.key)+1)%5]; s.active=null; save(); stopRest(); stopTimed(); wake(false); nativeStop();
-  const vol=sets.reduce((a,x)=>a+x.kg*x.reps,0), prs=sets.filter(x=>x.pr), newAch=checkAchievements(), lv=levelInfo(); autoBackup(true);
+  const vol=sets.reduce((a,x)=>a+x.kg*x.reps,0), prs=sets.filter(x=>x.pr), newAch=checkAchievements(), lv=levelInfo();
+  s.lastFin={at:Date.now(),x:{wk:sess.key,mi:sess.min,se:sets.length,vo:Math.round(vol),pr:prs.length}}; save(); watchSync(true); autoBackup(true);
   render();
   openSheet(`<div style="text-align:center;padding:6px 0 4px"><div style="color:var(--ok)">${ic("trophy",44,1.6)}</div><h2 style="margin-top:6px">Treino ${sess.key} concluído</h2><p class="mut small" style="margin:6px 0 0">${fmtDay(localISO(sess.date))}</p></div>
    <div class="stats" style="margin-top:14px"><div class="stat" style="background:var(--s2)"><b>${sess.min}</b><span>Minutos</span></div><div class="stat" style="background:var(--s2)"><b>${sets.length}</b><span>Séries</span></div><div class="stat" style="background:var(--s2)"><b>${(vol/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})}t</b><span>Volume</span></div></div>
    ${prs.length?`<div class="tip" style="margin-top:12px">${ic("trophy",18)}<div><b>${prs.length} recorde${prs.length>1?"s":""} pessoal${prs.length>1?"is":""}</b><br>${[...new Set(prs.map(x=>x.ex))].map(esc).join(", ")}</div></div>`:""}
    <div class="tip ok" style="margin-top:12px">${ic("trophy",18)}<div><b>+${xpOf(sess)} XP</b>${lv.L>lvBefore?` • Subiu para o nível ${lv.L} (${lv.title})!`:` • Nível ${lv.L}, ${lv.pct}% para o próximo`}${newAch.length?`<br>Conquista${newAch.length>1?"s":""}: ${newAch.map(esc).join(", ")}`:""}</div></div>
    <p class="small mut" style="margin:14px 0">Próximo da fila: <b style="color:var(--txt)">Treino ${s.next}</b></p>
-   <button class="cta" style="margin-top:0" onclick="closeSheet()">Fechar</button>`); haptic([40,60,40]); });
+   <button class="cta" style="margin-top:0" onclick="closeSheet()">Fechar</button>`); haptic([40,60,40]); };
+ const go=()=>opts.fromWatch?commit(opts.pain):painSheet(commit);
  const pgf=progressOf(A), total=pgf.total, d=pgf.done;
- if(d<total) ask("Concluir treino?",d?`Você marcou ${d} de ${total} séries. As séries não marcadas não entram no histórico.`:"Nenhuma série foi marcada. O treino entra no histórico sem cargas.","Concluir assim mesmo",go); else go();
+ if(opts.fromWatch) go(); else if(d<total) ask("Concluir treino?",d?`Você marcou ${d} de ${total} séries. As séries não marcadas não entram no histórico.`:"Nenhuma série foi marcada. O treino entra no histórico sem cargas.","Concluir assim mesmo",go); else go();
 }
 
 function painSheet(cb){ if(!PROFILE.spine){ cb(null); return; }
@@ -1518,7 +1578,7 @@ function vHist(){
  app.innerHTML=html+"</div>"; bindCalendar();
  app.querySelectorAll(".hcard").forEach(b=>b.onclick=()=>{ const x=load().sessions.find(s=>s.id==b.dataset.id), by={}; x.sets.forEach(st=>(by[st.ex]=by[st.ex]||[]).push(st));
   openSheet(`<h2>Treino ${x.key}</h2><p class="small mut" style="margin:4px 0 8px">${fmtDay(localISO(x.date))} • ${x.min} min • Fase ${x.phase}</p>
-   ${x.pain!=null?`<div class="chips" style="margin:0 0 6px"><span class="chip ${x.pain<=2?"ok":x.pain<=5?"warn":""}">Lombar: ${x.pain}/10</span></div>`:""}
+   ${x.pain!=null||x.hr?`<div class="chips" style="margin:0 0 6px">${x.pain!=null?`<span class="chip ${x.pain<=2?"ok":x.pain<=5?"warn":""}">Lombar: ${x.pain}/10</span>`:""}${x.hr?`<span class="chip">FC ${x.hr} méd • ${x.hx||"-"} máx</span>`:""}${x.kc?`<span class="chip">${x.kc} kcal</span>`:""}</div>`:""}
    ${Object.entries(by).map(([n,a])=>`<div class="lrow"><div style="min-width:0"><b>${esc(n)}</b><div class="small mut num">${a.map(s=>`${fmtKg(s.kg)}×${s.reps}${s.rir!=null?` @${s.rir===4?"4+":s.rir}`:""}${s.pr?" 🏆":""}`).join(" · ")}</div></div></div>`).join("")||`<p class="mut">Sem séries registradas.</p>`}
    <div class="gap"></div><button class="btn2 danger" id="del">${ic("trash",18)} Apagar treino</button><div class="gap"></div><button class="cta" style="margin-top:0" onclick="closeSheet()">Fechar</button>`);
   document.getElementById("del").onclick=()=>ask("Apagar treino?","Este treino sai do histórico e dos gráficos.","Apagar",()=>{ const s=load(); s.sessions=s.sessions.filter(z=>z.id!==x.id); save(); render(); toast("Treino apagado"); },true); });
@@ -1647,6 +1707,7 @@ function vCfg(){
   <div class="switch"><div><b style="font-weight:600">Contar corridas na recuperação</b><div class="small mut">${realRuns()?"Usando as corridas registradas ("+RUN_SRC[s.runSource]+")":"Considera tiro na terça e longão no sábado"}</div></div><button class="tg ${s.countRuns?"on":""}" data-tg="countRuns" aria-label="Contar corridas"></button></div>
   <div class="switch"><div><b style="font-weight:600">Manter tela ligada</b><div class="small mut">Enquanto um treino estiver aberto</div></div><button class="tg ${s.wake?"on":""}" data-tg="wake" aria-label="Manter tela ligada"></button></div>
  </div></div>
+ ${HASW?`<div class="sec"><div class="sech"><h3>Relógio Garmin</h3><span class="small mut">app Meu Treino</span></div><div class="panel" id="wstat"></div></div>`:""}
  <div class="sec"><div class="sech"><h3>Corridas</h3><span class="small mut">fonte dos dados</span></div><div class="panel" id="runsrc"></div></div>
  <div class="sec"><div class="sech"><h3>Ciclo</h3><span class="small mut">Ciclo ${s.cycle||1}</span></div><div class="panel"><p class="small mut" style="margin:0 0 12px">Gera as próximas 12 semanas trocando exercícios estagnados e ajustando o volume por músculo com base no seu histórico.</p><button class="btn2" id="cyc2">Gerar próximo ciclo</button></div></div>
  <div class="sec"><div class="sech"><h3>Barras da academia</h3></div><div class="panel"><div class="formgrid">
@@ -1669,7 +1730,7 @@ function vCfg(){
  document.getElementById("sndtest").onclick=()=>playSound("chime");
  document.getElementById("exp").onclick=exportBackup; document.getElementById("csv").onclick=exportCSV;
  document.getElementById("cyc2").onclick=cycleSheet; const abk=document.getElementById("abk"); if(abk) abk.onclick=async()=>{ await autoBackup(true); vCfg(); toast(load().autoBackupErr?"Não foi possível salvar o backup":"Backup salvo em Downloads/MeuTreino"); };
- runSourcePanel();
+ runSourcePanel(); if(HASW) watchPanel();
  ["barKg","smithKg"].forEach(k=>document.getElementById(k).onchange=e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)){ s[k]=v; save(); toast("Peso da barra salvo"); } });
  document.getElementById("imp").onchange=e=>importBackupFile(e.target.files[0]);
 }

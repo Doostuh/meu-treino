@@ -90,6 +90,7 @@ class Model {
     var flash = null;
     var flashUntil = 0;
     // ajustes
+    var demoHr = null;
     var hrAlert = true;
     var vib10 = true;
 
@@ -530,6 +531,7 @@ class Model {
     function tick() {
         var info = Act.getActivityInfo();
         hr = info != null ? info.currentHeartRate : null;
+        if (demoHr != null) { hr = demoHr; }
         var m = mode();
         if (hr != null && (m == M_SET || m == M_TIMED)) {
             setHrSum += hr;

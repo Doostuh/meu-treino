@@ -24,5 +24,15 @@ svc = '''
 '''
 if "WorkoutService" not in s:
     s = s.replace("</application>", svc + "    </application>", 1)
+if "com.garmin.android.apps.connectmobile" not in s:
+    s = s.replace("<application", '    <queries>\n        <package android:name="com.garmin.android.apps.connectmobile" />\n    </queries>\n    <application', 1)
 open(mf, "w", encoding="utf-8").write(s)
+
+# Connect IQ Mobile SDK (conversa com o app do relógio pelo Garmin Connect)
+bg = os.path.join(ROOT, "android", "app", "build.gradle")
+g = open(bg, encoding="utf-8").read()
+dep = 'implementation "com.garmin.connectiq:ciq-companion-app-sdk:2.4.0"'
+if dep not in g:
+    g = re.sub(r"dependencies\s*\{", "dependencies {\n    " + dep, g, count=1)
+    open(bg, "w", encoding="utf-8").write(g)
 print("android patched")

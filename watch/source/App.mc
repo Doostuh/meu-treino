@@ -17,6 +17,7 @@ class MeuTreinoApp extends App.AppBase {
         gLink = new PhoneLink();
         if (gModel.active) { gRec.start("Treino " + gModel.wk); }
         gLink.hello();
+        demoHook();
     }
 
     function onStop(state) {
@@ -30,3 +31,6 @@ class MeuTreinoApp extends App.AppBase {
         return [v, new MainDelegate(v)];
     }
 }
+
+(:nodemo)
+function demoHook() { }

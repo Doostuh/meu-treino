@@ -40,6 +40,33 @@ public class WorkoutNotifPlugin extends Plugin {
     @Override
     public void load() {
         instance = this;
+        try { GarminLink.get(getContext()).init(); } catch (Throwable ignored) { }
+    }
+
+    static void emitWatch(JSObject data) {
+        if (instance != null) instance.notifyListeners("watch", data, true);
+    }
+
+    /** Estado do treino para o relógio Garmin. */
+    @PluginMethod
+    public void watchSend(PluginCall call) {
+        JSObject m = call.getObject("msg");
+        try { GarminLink.get(getContext()).send(m); } catch (Throwable ignored) { }
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void watchStatus(PluginCall call) {
+        GarminLink g = GarminLink.get(getContext());
+        g.init();
+        g.refreshDevices();
+        call.resolve(g.status());
+    }
+
+    @PluginMethod
+    public void watchOpen(PluginCall call) {
+        GarminLink.get(getContext()).openApp(null);
+        call.resolve();
     }
 
     static void emit(JSObject data) {

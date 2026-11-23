@@ -126,7 +126,7 @@ class MainView extends Ui.View {
         ring(dc, frac, C_ACC, 7);
         status(dc);
         var timed = toInt(it[Q_TIME], 0);
-        text(dc, cx, y(52), Gfx.FONT_XTINY, "SÉRIE " + toInt(it[Q_SETNO], 1) + " DE " + toInt(it[Q_NSETS], 1) + "  •  " + md.wk, C_MUT);
+        text(dc, cx, y(52), Gfx.FONT_XTINY, "SÉRIE " + toInt(it[Q_SETNO], 1) + " DE " + toInt(it[Q_NSETS], 1) + "  ·  " + md.wk, C_MUT);
         nameLines(dc, it[Q_NAME], y(86), 2);
         var kg = md.curKg();
         var reps = md.curReps();
@@ -183,7 +183,7 @@ class MainView extends Ui.View {
             var nm = ellipsize(dc, toStr(it[Q_NAME], ""), Gfx.FONT_TINY, W - 60);
             text(dc, cx, y(150), Gfx.FONT_TINY, nm, C_TXT);
             var det = toInt(it[Q_TIME], 0) > 0 ? toInt(it[Q_TIME], 0) + " s" : fmtKg(md.curKg()) + " kg x " + md.curReps();
-            text(dc, cx, y(172), Gfx.FONT_XTINY, det + "  •  série " + toInt(it[Q_SETNO], 1) + "/" + toInt(it[Q_NSETS], 1), C_MUT);
+            text(dc, cx, y(172), Gfx.FONT_XTINY, det + "  ·  série " + toInt(it[Q_SETNO], 1) + "/" + toInt(it[Q_NSETS], 1), C_MUT);
         }
         textL(dc, 16, y(110), Gfx.FONT_XTINY, "+15", C_MUT);
         textL(dc, 30, y(162), Gfx.FONT_XTINY, "-15", C_MUT);
@@ -256,7 +256,7 @@ class MainView extends Ui.View {
             frac = 1.0;
             rc = C_OK;
             col = C_OK;
-            label = sides == 2 && md.tmSide == 1 ? "LADO 1 OK • TEMPO EXTRA" : "TEMPO BATIDO • EXTRA";
+            label = sides == 2 && md.tmSide == 1 ? "LADO 1 OK · TEMPO EXTRA" : "TEMPO BATIDO · EXTRA";
         }
         ring(dc, frac, rc, 9);
         status(dc);
@@ -273,7 +273,7 @@ class MainView extends Ui.View {
         var md = gModel;
         ring(dc, 0.0, C_ACC, 7);
         status(dc);
-        text(dc, cx, y(56), Gfx.FONT_XTINY, "AQUECIMENTO  •  " + md.wk, C_MUT);
+        text(dc, cx, y(56), Gfx.FONT_XTINY, "AQUECIMENTO  ·  " + md.wk, C_MUT);
         nameLines(dc, md.warmName, y(88), 2);
         var el = (Sys.getTimer() - md.warmT0) / 1000;
         if (md.warmT0 <= 0) { el = 0; }
@@ -328,7 +328,7 @@ class MainView extends Ui.View {
         ring(dc, p / 10.0, c, 9);
         text(dc, cx, y(46), Gfx.FONT_XTINY, "COMO ESTÁ A LOMBAR?", C_MUT);
         text(dc, cx, y(112), Gfx.FONT_NUMBER_HOT, p.format("%d"), c);
-        text(dc, cx, y(162), Gfx.FONT_XTINY, "0 sem dor  •  10 dor forte", C_MUT);
+        text(dc, cx, y(162), Gfx.FONT_XTINY, "0 sem dor  ·  10 dor forte", C_MUT);
         text(dc, cx, y(186), Gfx.FONT_XTINY, "START confirma", C_ACC);
         btnMark(dc, 30, C_OK);
     }
@@ -342,14 +342,14 @@ class MainView extends Ui.View {
         text(dc, cx, y(106), Gfx.FONT_XTINY, "minutos", C_MUT);
         var vo = toInt(s["vo"], 0);
         var vs = vo >= 1000 ? (vo / 1000.0).format("%.1f") + " t" : vo + " kg";
-        text(dc, cx, y(132), Gfx.FONT_TINY, toInt(s["se"], 0) + " séries  •  " + vs, C_TXT);
+        text(dc, cx, y(132), Gfx.FONT_TINY, toInt(s["se"], 0) + " séries  ·  " + vs, C_TXT);
         var hr = toInt(s["hr"], 0);
         if (hr > 0) {
-            text(dc, cx, y(156), Gfx.FONT_TINY, "FC " + hr + " méd  •  " + toInt(s["hx"], 0) + " máx", C_TXT);
+            text(dc, cx, y(156), Gfx.FONT_TINY, "FC " + hr + " méd  ·  " + toInt(s["hx"], 0) + " máx", C_TXT);
         }
         var kc = toInt(s["kc"], 0);
         var pr = toInt(s["pr"], 0);
-        var l3 = (kc > 0 ? kc + " kcal" : "") + (pr > 0 ? (kc > 0 ? "  •  " : "") + pr + " recorde" + (pr > 1 ? "s" : "") : "");
+        var l3 = (kc > 0 ? kc + " kcal" : "") + (pr > 0 ? (kc > 0 ? "  ·  " : "") + pr + " recorde" + (pr > 1 ? "s" : "") : "");
         if (l3.length() > 0) { text(dc, cx, y(178), Gfx.FONT_TINY, l3, pr > 0 ? C_WARN : C_TXT); }
         text(dc, cx, y(204), Gfx.FONT_XTINY, s["saved"] == true ? "Salvo no Garmin Connect" : "START para sair", C_MUT);
         btnMark(dc, 30, C_OK);
