@@ -55,6 +55,8 @@ class Model {
     var spine = false;
     var nextKey = "";
     var nextName = "";
+    var pq = [];
+    var pt = 0;
     var ov = {};
     var sel = 0;
     // descanso
@@ -173,6 +175,13 @@ class Model {
         if (!ac) {
             nextKey = toStr(d["nk"], "");
             nextName = toStr(d["nn"], "");
+            if (d["pq"] instanceof Lang.Array) {
+                pq = d["pq"];
+                pt = toInt(d["pt"], pq.size());
+                warmName = toStr(d["wn"], warmName);
+                askRir = toInt(d["ar"], 0) == 1;
+                spine = toInt(d["sp"], 0) == 1;
+            }
             if (active && outboxEmpty) {
                 // o treino foi concluído ou descartado no celular
                 var fx = d["fx"];
@@ -267,6 +276,23 @@ class Model {
         var avg = setHrN > 0 ? setHrSum / setHrN : 0;
         var msg = {"t" => "done", "k" => key, "kg" => kg, "r" => reps, "rs" => rest, "hr" => avg, "hx" => setHrMax};
         gRec.setLap(kg, reps);
+        // mudou carga ou reps? leva o ajuste para as próximas séries do mesmo exercício
+        var ik = toInt(it[Q_KG], 0);
+        var ir = toInt(it[Q_REPS], 0);
+        if ((kg != ik || reps != ir) && toInt(it[Q_TIME], 0) == 0) {
+            var slot = key.substring(0, key.find("#"));
+            for (var i = 1; i < q.size(); i++) {
+                var k2 = q[i][Q_KEY];
+                if (k2.substring(0, k2.find("#")).equals(slot)) {
+                    var o2 = ov[k2];
+                    var nk = o2 != null ? o2[0] : toInt(q[i][Q_KG], 0);
+                    var nr = o2 != null ? o2[1] : toInt(q[i][Q_REPS], 0);
+                    if (kg != ik) { nk = kg; }
+                    if (reps != ir) { nr = reps; }
+                    ov[k2] = [nk, nr];
+                }
+            }
+        }
         q = q.slice(1, q.size());
         done += 1;
         ov.remove(key);
@@ -374,9 +400,33 @@ class Model {
     }
 
     function requestStart() {
-        gLink.send({"t" => "start"});
-        flash = "Iniciando...";
-        flashUntil = now() + 4000;
+        if (pq.size() > 0) {
+            startLocal();
+        } else {
+            flash = "Iniciando...";
+            flashUntil = now() + 4000;
+        }
+        gLink.send({"t" => "start", "wk" => nextKey});
+    }
+
+    // começa o treino só com o que o relógio já tem, sem depender do celular
+    function startLocal() {
+        active = true;
+        wk = nextKey;
+        stage = "warm";
+        warmT0 = now();
+        q = pq;
+        pq = [];
+        total = pt;
+        done = 0;
+        ov = {};
+        rirDone = {};
+        sum = null;
+        painMode = false;
+        restEnd = 0;
+        tm = T_NONE;
+        gRec.start("Treino " + wk);
+        persist();
     }
 
     function startFinish() {
@@ -575,7 +625,7 @@ class Model {
         var st = {
             "ac" => active, "wk" => wk, "stg" => stage, "wn" => warmName, "q" => q, "dn" => done, "to" => total,
             "eh" => etaHH, "em" => etaMin, "ar" => askRir, "sp" => spine, "nk" => nextKey, "nn" => nextName,
-            "ov" => ov, "rd" => rirDone
+            "ov" => ov, "rd" => rirDone, "pq" => pq, "pt" => pt
         };
         try { App.Storage.setValue("st", st); } catch (e) { }
     }
@@ -596,6 +646,8 @@ class Model {
         nextName = toStr(st["nn"], "");
         if (st["ov"] instanceof Lang.Dictionary) { ov = st["ov"]; }
         if (st["rd"] instanceof Lang.Dictionary) { rirDone = st["rd"]; }
+        if (st["pq"] instanceof Lang.Array) { pq = st["pq"]; }
+        pt = toInt(st["pt"], 0);
     }
 
     function saveCfg() {

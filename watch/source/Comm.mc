@@ -15,10 +15,17 @@ class PhoneLink {
     var lastHi = 0;
     var needHi = false;
     var off = false;
+    var seq = 0;
+    var sent = [];
+    var lastAckAt = 0;
+    var lastResend = 0;
 
     function initialize() {
         var ob = App.Storage.getValue("ob");
         if (ob instanceof Lang.Array) { outbox = ob; }
+        var sn = App.Storage.getValue("sn");
+        if (sn instanceof Lang.Array) { sent = sn; }
+        seq = toInt(App.Storage.getValue("seq"), 0);
         try {
             Comm.registerForPhoneAppMessages(method(:onPhone));
         } catch (e) { }
@@ -29,14 +36,44 @@ class PhoneLink {
         if (d instanceof Lang.Dictionary) {
             var t = d["t"];
             if (t != null && t.equals("s")) {
-                gModel.applyState(d, outbox.size() == 0);
+                ack(d["ak"]);
+                gModel.applyState(d, outbox.size() == 0 && sent.size() == 0);
                 if (outbox.size() > 0) { needHi = true; }
             }
         }
         Ui.requestUpdate();
     }
 
+    // o celular confirma até qual ação já aplicou; o que não foi confirmado é reenviado
+    function ack(ak) {
+        var t = Sys.getTimer();
+        if (ak == null) { sent = []; save(); return; }
+        var a = toInt(ak, 0);
+        lastAckAt = t;
+        var keep = [];
+        for (var i = 0; i < sent.size(); i++) {
+            if (toInt(sent[i]["id"], 0) > a) { keep.add(sent[i]); }
+        }
+        sent = keep;
+        if (sent.size() > 0 && t - lastResend > 15000) { resend(); }
+        save();
+    }
+
+    function resend() {
+        lastResend = Sys.getTimer();
+        var n = [];
+        for (var i = 0; i < sent.size(); i++) { n.add(sent[i]); }
+        for (var j = 0; j < outbox.size(); j++) { n.add(outbox[j]); }
+        outbox = n;
+        sent = [];
+        save();
+        pump();
+    }
+
     function send(m) {
+        seq += 1;
+        m["id"] = seq;
+        m["_t"] = Sys.getTimer();
         outbox.add(m);
         if (outbox.size() > 60) { outbox = outbox.slice(outbox.size() - 60, outbox.size()); }
         save();
@@ -61,8 +98,12 @@ class PhoneLink {
         if (busy || outbox.size() == 0) { return; }
         if (Sys.getTimer() < nextTry) { return; }
         busy = true;
+        var m = outbox[0];
+        var t0 = toInt(m["_t"], 0);
+        var ago = (Sys.getTimer() - t0) / 1000;
+        m["ago"] = ago > 0 && t0 > 0 ? ago : 0;
         try {
-            Comm.transmit(outbox[0], null, new LinkListener(self, true));
+            Comm.transmit(m, null, new LinkListener(self, true));
         } catch (e) {
             busy = false;
             onFail();
@@ -75,6 +116,8 @@ class PhoneLink {
         nextTry = 0;
         lastOk = Sys.getTimer();
         if (real && outbox.size() > 0) {
+            sent.add(outbox[0]);
+            if (sent.size() > 80) { sent = sent.slice(sent.size() - 80, sent.size()); }
             outbox = outbox.slice(1, outbox.size());
             save();
         }
@@ -98,6 +141,10 @@ class PhoneLink {
     // chamado a cada segundo pela tela
     function tick() {
         var t = Sys.getTimer();
+        if (outbox.size() == 0 && sent.size() > 0 && t - lastAckAt > 45000 && t - lastResend > 45000) {
+            resend();
+            return;
+        }
         if (outbox.size() > 0) {
             pump();
         } else if (!busy && (!gModel.hasPhone && t - lastHi > 8000 || t - gModel.lastPhone > 60000 && t - lastHi > 30000)) {
@@ -107,14 +154,18 @@ class PhoneLink {
 
     // 0 = ok, 1 = enviando/pendente, 2 = sem celular
     function status() {
-        if (outbox.size() > 0) { return fails > 1 ? 2 : 1; }
+        if (outbox.size() > 0 || sent.size() > 0) { return fails > 1 ? 2 : 1; }
         if (fails > 1) { return 2; }
         if (gModel.hasPhone || lastOk > 0) { return 0; }
         return 1;
     }
 
     function save() {
-        try { App.Storage.setValue("ob", outbox); } catch (e) { }
+        try {
+            App.Storage.setValue("ob", outbox);
+            App.Storage.setValue("sn", sent);
+            App.Storage.setValue("seq", seq);
+        } catch (e) { }
     }
 }
 

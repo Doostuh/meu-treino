@@ -293,7 +293,7 @@ class MainView extends Ui.View {
             text(dc, cx, y(126), Gfx.FONT_XTINY, "com o celular...", C_MUT);
             return;
         }
-        if (!md.hasPhone) {
+        if (!md.hasPhone && md.pq.size() == 0) {
             text(dc, cx, y(64), Gfx.FONT_XTINY, "MEU TREINO", C_ACC);
             text(dc, cx, y(100), Gfx.FONT_SMALL, "Abra o app", C_TXT);
             text(dc, cx, y(124), Gfx.FONT_SMALL, "no celular", C_TXT);
@@ -306,7 +306,7 @@ class MainView extends Ui.View {
         for (var i = 0; i < lines.size(); i++) {
             text(dc, cx, y(146) + i * dc.getFontHeight(Gfx.FONT_TINY), Gfx.FONT_TINY, lines[i], C_TXT);
         }
-        text(dc, cx, y(198), Gfx.FONT_XTINY, "START para iniciar", C_ACC);
+        text(dc, cx, y(198), Gfx.FONT_XTINY, md.pq.size() > 0 ? "START inicia · " + md.pt + " séries" : "START para iniciar", C_ACC);
         btnMark(dc, 30, C_OK);
     }
 

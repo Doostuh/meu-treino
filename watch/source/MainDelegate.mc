@@ -23,7 +23,7 @@ class MainDelegate extends Ui.BehaviorDelegate {
         } else if (m == M_PAIN) {
             md.sendFinish(md.pain);
         } else if (m == M_WAIT) {
-            if (md.hasPhone && !md.active) { md.requestStart(); }
+            if (!md.active && (md.hasPhone || md.pq.size() > 0)) { md.requestStart(); }
             else { gLink.hello(); }
         } else if (m == M_WARM) {
             md.warmDone();
@@ -113,7 +113,7 @@ class MainDelegate extends Ui.BehaviorDelegate {
                 menu.addItem(new Ui.MenuItem("Pular exercício", null, :skipEx, {}));
             }
             menu.addItem(new Ui.MenuItem("Concluir treino", "salva no celular e no Garmin", :finish, {}));
-        } else if (md.hasPhone) {
+        } else if (md.hasPhone || md.pq.size() > 0) {
             menu.addItem(new Ui.MenuItem("Iniciar treino " + md.nextKey, null, :start, {}));
         }
         menu.addItem(new Ui.ToggleMenuItem("Aviso FC recuperada", "vibra no descanso", :hrAlert, md.hrAlert, {}));
