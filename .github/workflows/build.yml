@@ -42,12 +42,45 @@ jobs:
         run: cp android/app/build/outputs/apk/debug/app-debug.apk MeuTreino.apk
       - uses: actions/upload-artifact@v4
         with: { name: MeuTreino-apk, path: MeuTreino.apk }
+
+
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar app do relógio (Connect IQ)
+        run: |
+          docker run --rm -v "$PWD":/app -w /app/watch --entrypoint /bin/bash ghcr.io/matco/connectiq-tester:latest -c '
+            set -e
+            monkeyc --version || true
+            for d in fr245m fr245; do
+              monkeyc -f monkey.jungle -d $d -o /app/MeuTreino-$d.prg -y /app/ci/garmin_dev_key.der -r -w -l 0
+            done
+            monkeyc -f monkey.jungle -e -o /app/MeuTreino.iq -y /app/ci/garmin_dev_key.der -r -l 0
+          '
+          ls -la MeuTreino*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MeuTreino-watch
+          path: |
+            MeuTreino-fr245m.prg
+            MeuTreino-fr245.prg
+            MeuTreino.iq
+
+  release:
+    needs: [apk, watch]
+    if: always() && needs.apk.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: dist, merge-multiple: true }
+      - run: ls -la dist
       - name: Publicar na página de Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: Meu Treino build ${{ github.run_number }}
-          files: MeuTreino.apk
+          files: dist/*
 
   pages:
     runs-on: ubuntu-latest
