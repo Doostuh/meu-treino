@@ -180,13 +180,13 @@ class MainView extends Ui.View {
         text(dc, cx, y(100), Gfx.FONT_NUMBER_HOT, fmtMMSS(l), l <= 10 ? C_WARN : C_TXT);
         var it = md.cur();
         if (it != null) {
-            var nm = ellipsize(dc, toStr(it[Q_NAME], ""), Gfx.FONT_TINY, W - 60);
+            var nm = ellipsize(dc, toStr(it[Q_NAME], ""), Gfx.FONT_TINY, W - 96);
             text(dc, cx, y(150), Gfx.FONT_TINY, nm, C_TXT);
             var det = toInt(it[Q_TIME], 0) > 0 ? toInt(it[Q_TIME], 0) + " s" : fmtKg(md.curKg()) + " kg x " + md.curReps();
-            text(dc, cx, y(172), Gfx.FONT_XTINY, det + "  ·  série " + toInt(it[Q_SETNO], 1) + "/" + toInt(it[Q_NSETS], 1), C_MUT);
+            text(dc, cx, y(172), Gfx.FONT_XTINY, ellipsize(dc, det + " · " + toInt(it[Q_SETNO], 1) + "/" + toInt(it[Q_NSETS], 1), Gfx.FONT_XTINY, W - 96), C_MUT);
         }
-        textL(dc, 16, y(110), Gfx.FONT_XTINY, "+15", C_MUT);
-        textL(dc, 30, y(162), Gfx.FONT_XTINY, "-15", C_MUT);
+        textL(dc, 10, y(116), Gfx.FONT_XTINY, "+15", C_MUT);
+        textL(dc, 20, y(150), Gfx.FONT_XTINY, "-15", C_MUT);
         textR(dc, W - 22, y(78), Gfx.FONT_XTINY, "pular", C_MUT);
         btnMark(dc, 30, C_INFO);
     }
@@ -279,7 +279,7 @@ class MainView extends Ui.View {
         if (md.warmT0 <= 0) { el = 0; }
         text(dc, cx, y(138), Gfx.FONT_NUMBER_MEDIUM, fmtMMSS(el), C_TXT);
         text(dc, cx, y(176), Gfx.FONT_XTINY, "Siga os exercícios no celular", C_MUT);
-        text(dc, cx, y(196), Gfx.FONT_XTINY, "START: começar a musculação", C_ACC);
+        text(dc, cx, y(196), Gfx.FONT_XTINY, ellipsize(dc, "START: musculação", Gfx.FONT_XTINY, W - 80), C_ACC);
         btnMark(dc, 30, C_OK);
     }
 

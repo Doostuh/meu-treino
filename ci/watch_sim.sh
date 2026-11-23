@@ -10,9 +10,9 @@ sleep 2
 simulator >/dev/null 2>&1 &
 sleep 8
 monkeydo /tmp/demo.prg fr245m > /app/shots/log.txt 2>&1 &
-sleep 2.5
+sleep 4
 for i in $(seq -w 0 13); do
-  xdotool key Return 2>/dev/null; sleep 0.3; import -window root /app/shots/s$i.png 2>/dev/null
+  import -window root /app/shots/s$i.png 2>/dev/null
   sleep 3
 done
 sleep 1
