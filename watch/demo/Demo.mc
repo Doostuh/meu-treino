@@ -8,6 +8,7 @@ var gDemo = null;
 
 (:demo)
 function demoHook() {
+    gLink.off = true;
     gDemo = new DemoRunner();
 }
 

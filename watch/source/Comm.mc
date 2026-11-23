@@ -14,6 +14,7 @@ class PhoneLink {
     var lastOk = 0;
     var lastHi = 0;
     var needHi = false;
+    var off = false;
 
     function initialize() {
         var ob = App.Storage.getValue("ob");
@@ -43,6 +44,7 @@ class PhoneLink {
     }
 
     function hello() {
+        if (off) { return; }
         lastHi = Sys.getTimer();
         if (outbox.size() == 0 && !busy) {
             busy = true;
@@ -55,6 +57,7 @@ class PhoneLink {
     }
 
     function pump() {
+        if (off) { outbox = []; return; }
         if (busy || outbox.size() == 0) { return; }
         if (Sys.getTimer() < nextTry) { return; }
         busy = true;
