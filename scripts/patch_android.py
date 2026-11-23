@@ -34,5 +34,21 @@ g = open(bg, encoding="utf-8").read()
 dep = 'implementation "com.garmin.connectiq:ciq-companion-app-sdk:2.4.0"'
 if dep not in g:
     g = re.sub(r"dependencies\s*\{", "dependencies {\n    " + dep, g, count=1)
-    open(bg, "w", encoding="utf-8").write(g)
+# Assinatura sempre com a mesma chave (ci/debug.keystore) para o Android aceitar instalar por cima
+ks = os.path.join(ROOT, "ci", "debug.keystore").replace("\\", "/")
+if "signingConfigs.fixo" not in g:
+    g = g.replace("buildTypes {", """signingConfigs {
+        fixo {
+            storeFile file("%s")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.fixo }""" % ks, 1)
+# versionCode crescente a cada build (número da execução do CI)
+g = re.sub(r"versionCode \d+", 'versionCode Integer.parseInt(System.getenv("VC") ?: "1")', g, count=1)
+g = re.sub(r'versionName "[^"]*"', 'versionName "2.7." + (System.getenv("VC") ?: "0")', g, count=1)
+open(bg, "w", encoding="utf-8").write(g)
 print("android patched")
